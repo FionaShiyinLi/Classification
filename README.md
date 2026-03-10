@@ -21,7 +21,6 @@ pip install -r requirements.txt
 
 ## Reproduce paper artifacts
 
-Run all commands from this `finetune_code/` directory.
 
 1) Hyperparameter search (paper Section 3.1.3):
 
