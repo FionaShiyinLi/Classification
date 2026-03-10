@@ -1,0 +1,11 @@
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+torch
+transformers
+datasets
+accelerate
+openai
+python-dotenv
