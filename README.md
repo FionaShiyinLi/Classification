@@ -20,6 +20,8 @@ Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+## Data availability
+A small sample dataset (outcome_3cls.csv) is provided in this repository for illustration and code-structure demonstration purposes only. The full dataset used in this study cannot be shared publicly because of data-use and redistribution limitations associated with the source material. Researchers may use the sample file to inspect the data format and test the analysis pipeline. The full dataset is available from the corresponding author upon reasonable request.
 
 ## Reproduce paper artifacts
 
