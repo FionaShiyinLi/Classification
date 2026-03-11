@@ -22,8 +22,10 @@ ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
 
-# Model paths (updated to match finetune_high_accuracy.py)
-FINE_TUNED_MODEL_PATH = "./results/outputs_hparam_search/lr3e-05_wu0.06_uf4_rd1.0/best_model"
+# Model path conventions:
+# - Tuned 4-block reference model: single checkpoint used for all
+#   fine-tuned/LLM/hybrid comparisons in this script.
+TUNED_4BLOCK_MODEL_PATH = "./results/outputs_hparam_search/lr3e-05_wu0.06_uf4_rd1.0/best_model"
 MODEL_NAME = "bioformers/bioformer-8L"
 MAX_LENGTH = 128  # Match finetune_high_accuracy.py
 
@@ -612,7 +614,7 @@ def main():
     
     # Load test data
     print("\n[1/5] Loading test data...")
-    texts, labels = load_test_data(CSV_3CLS, FINE_TUNED_MODEL_PATH)
+    texts, labels = load_test_data(CSV_3CLS, TUNED_4BLOCK_MODEL_PATH)
     print(f"Test samples: {len(texts)}")
     print(f"Class distribution: {np.bincount(labels)}")
     
@@ -620,16 +622,18 @@ def main():
     
     # Method 1: Fine-tuned model
     print("\n[2/5] Evaluating fine-tuned model...")
-    if os.path.exists(FINE_TUNED_MODEL_PATH):
-        ft_evaluator = FineTunedModelEvaluator(FINE_TUNED_MODEL_PATH)
+    if os.path.exists(TUNED_4BLOCK_MODEL_PATH):
+        ft_evaluator = FineTunedModelEvaluator(TUNED_4BLOCK_MODEL_PATH)
         start_time = time.time()
         preds_ft, _ = ft_evaluator.predict_batch(texts, batch_size=32)
         ft_time = time.time() - start_time
         
-        results_ft = evaluate_method(labels, preds_ft, "Fine-Tuned Bioformer-8L")
+        results_ft = evaluate_method(
+            labels, preds_ft, "Fine-Tuned Bioformer-8L (Tuned 4-block reference)"
+        )
         results_ft["inference_time"] = ft_time
         results_ft["time_per_sample"] = ft_time / len(texts)
-        results_ft["model_path"] = FINE_TUNED_MODEL_PATH
+        results_ft["model_path"] = TUNED_4BLOCK_MODEL_PATH
         all_results.append(results_ft)
         print(f"  Accuracy: {results_ft['accuracy']:.4f}")
         print(f"  Macro F1: {results_ft['macro_f1']:.4f}")
@@ -638,14 +642,14 @@ def main():
         # Validation check: warn if accuracy is suspiciously low
         if results_ft['accuracy'] < 0.85: # Lowered threshold to be more realistic
             print(f"\n  ⚠️  WARNING: Accuracy ({results_ft['accuracy']:.4f}) is lower than expected.")
-            print(f"  ⚠️  Expected accuracy for this model on the canonical split is ~90.07%.")
+            print(f"  ⚠️  Expected accuracy for this tuned 4-block reference is ~90.07%.")
             print(f"  ⚠️  This may indicate:")
             print(f"      - A mismatch in test data (wrong split or preprocessing).")
             print(f"      - The wrong model checkpoint is being loaded.")
             print(f"      - A bug in the model loading or evaluation logic.")
-            print(f"  ⚠️  Model path being evaluated: {FINE_TUNED_MODEL_PATH}")
+            print(f"  ⚠️  Model path being evaluated: {TUNED_4BLOCK_MODEL_PATH}")
     else:
-        print(f"  Warning: Fine-tuned model not found at {FINE_TUNED_MODEL_PATH}")
+        print(f"  Warning: Fine-tuned model not found at {TUNED_4BLOCK_MODEL_PATH}")
         ft_evaluator = None
     
     # Method 2: LLM API
@@ -735,8 +739,12 @@ def main():
     print("\n" + "=" * 60)
     print("VALIDATION NOTES")
     print("=" * 60)
+    print("Expected results (from authoritative artifacts):")
+    print("  - Fine-tuned Bioformer-8L (tuned 4-block reference): ~90.07% accuracy")
+    print("  - LLM API (GPT-5.2, improved prompt): ~50.23% accuracy")
+    print("  - Hybrid (confidence < 0.7): ~89.03% accuracy")
     print("\nIf fine-tuned model accuracy is significantly different:")
-    print("  1. Check that the correct model checkpoint is loaded (see FINE_TUNED_MODEL_PATH).")
+    print("  1. Check that the correct model checkpoint is loaded (see TUNED_4BLOCK_MODEL_PATH).")
     print("  2. Verify test data preprocessing matches the canonical training split (seed=42).")
     print("  3. Ensure 'test_predictions.csv' is not being loaded from an incorrect directory.")
     print("\nAuthoritative result files for verification:")

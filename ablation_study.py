@@ -2,10 +2,10 @@
 # Ablation study: Test which components matter most
 # Tests: R-Drop, class weights, unfreezing strategy, learning rate
 
-import os, json
+import os, json, re
 import numpy as np
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import torch
 from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
@@ -25,8 +25,11 @@ LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 
 OUTPUT_DIR = "./outputs_ablation"
 RESULTS_DIR = "./results"
+REFERENCE_CHECKPOINT = "./results/outputs_hparam_search/lr3e-05_wu0.06_uf4_rd1.0/best_model"
+SPLIT_PROTOCOL = "canonical_split_A_seed42_70_10_20"
+REFERENCE_EXPERIMENT_NAME = "Unfreeze 4 Blocks"
 
-# Baseline config (from finetune_high_accuracy.py)
+# Baseline config
 BASELINE_CONFIG = {
     "max_length": 128,
     "epochs": 8,
@@ -41,6 +44,10 @@ BASELINE_CONFIG = {
     "use_class_weights": True,
     "unfreeze_blocks": 2,
 }
+
+_DASHES = "".join(["\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"])
+_DASH_RE = re.compile(f"[{_DASHES}]")
+_rng = np.random.default_rng(SEED)
 
 # Ablation experiments
 ABLATION_EXPERIMENTS = [
@@ -88,11 +95,229 @@ ABLATION_EXPERIMENTS = [
     },
 ]
 
-from finetune_high_accuracy import (
-    load_and_clean, stratified_split_70_10_20,
-    unlock_last_blocks_and_layernorms, compute_class_weights,
-    check_gpu_availability
-)
+def _canon_label_str(s: str) -> str:
+    if s is None:
+        return ""
+    s = str(s).strip().lower()
+    s = _DASH_RE.sub("-", s)
+    s = s.replace("_", " ").replace("-", " ")
+    s = re.sub(r"[^\w\s\.]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def normalize_label_column(df: pd.DataFrame, label_col: str, report_dir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    raw = df[label_col].copy()
+    norm_int, reasons, norm_str_seen = [], [], []
+    for v in raw:
+        num = None
+        try:
+            f = float(str(v).strip())
+            if f in (0.0, 1.0, 2.0):
+                num = int(f)
+        except Exception:
+            pass
+        if num is not None:
+            norm_int.append(num)
+            reasons.append("as-is numeric")
+            norm_str_seen.append(str(v).strip())
+            continue
+
+        s = _canon_label_str(v)
+        direct = {
+            "0": 0,
+            "1": 1,
+            "2": 2,
+            "objective": 0,
+            "obj": 0,
+            "semi": 1,
+            "semiobjective": 1,
+            "semi objective": 1,
+            "subjective": 2,
+            "subj": 2,
+        }
+        if s in direct:
+            mapped = direct[s]
+            norm_int.append(mapped)
+            reasons.append(
+                {
+                    0: "from string objective",
+                    1: "from string semi-objective",
+                    2: "from string subjective",
+                }[mapped]
+            )
+            norm_str_seen.append(s)
+            continue
+        if re.search(r"\bobj(ective)?\b", s):
+            norm_int.append(0)
+            reasons.append("regex objective")
+            norm_str_seen.append(s)
+            continue
+        if re.search(r"\bsemi(\s*objective)?\b", s):
+            norm_int.append(1)
+            reasons.append("regex semi-objective")
+            norm_str_seen.append(s)
+            continue
+        if re.search(r"\bsubj(ective)?\b", s):
+            norm_int.append(2)
+            reasons.append("regex subjective")
+            norm_str_seen.append(s)
+            continue
+        norm_int.append(np.nan)
+        reasons.append("unmapped")
+        norm_str_seen.append(s)
+
+    out = df.copy()
+    out[label_col + "_raw"] = raw
+    out[label_col + "_norm_str"] = norm_str_seen
+    out[label_col + "_norm_reason"] = reasons
+    out[label_col] = pd.Series(norm_int, index=df.index, dtype="float").astype("Int64")
+
+    report = out[[TEXT_COL, label_col + "_raw", label_col + "_norm_str", label_col + "_norm_reason", label_col]].copy()
+    os.makedirs(report_dir, exist_ok=True)
+    report_path = os.path.join(report_dir, "label_normalization_report.csv")
+    report.to_csv(report_path, index=False, encoding="utf-8")
+    print(f"[LABEL] Report -> {os.path.abspath(report_path)}")
+    return out, report
+
+def load_and_clean(csv_path: str, keep_duplicates: bool = False, save_report: bool = True) -> pd.DataFrame:
+    raw = pd.read_csv(csv_path)
+    removed = []
+
+    def mark_removed(df_sub: pd.DataFrame, reason: str):
+        if df_sub is None or len(df_sub) == 0:
+            return
+        tmp = df_sub.copy()
+        tmp["__reason__"] = reason
+        removed.append(tmp)
+
+    if TEXT_COL not in raw.columns or LABEL3 not in raw.columns:
+        raise ValueError(f"CSV must contain columns: '{TEXT_COL}', '{LABEL3}'")
+
+    df = raw[[TEXT_COL, LABEL3]].copy()
+
+    mask_na = df[TEXT_COL].isna() | df[LABEL3].isna()
+    mark_removed(df[mask_na], "NaN in text or label")
+    df = df[~mask_na].copy()
+
+    df[TEXT_COL] = df[TEXT_COL].astype(str).str.strip()
+    mask_empty = df[TEXT_COL].str.len() == 0
+    mark_removed(df[mask_empty], "Empty text after strip")
+    df = df[~mask_empty].copy()
+
+    df, _ = normalize_label_column(df, LABEL3, report_dir=OUTPUT_DIR)
+
+    bad_mask = ~df[LABEL3].isin([0, 1, 2])
+    mark_removed(df[bad_mask], "Label unmapped")
+    df = df[~bad_mask].copy()
+
+    if not keep_duplicates:
+        dup = df.duplicated(subset=[TEXT_COL, LABEL3], keep="first")
+        mark_removed(df[dup], "Duplicate (text+label)")
+        df = df[~dup].copy()
+
+    if save_report and len(removed) > 0:
+        rem = pd.concat(removed, ignore_index=True)
+        rem.to_csv(os.path.join(OUTPUT_DIR, "data_clean_removed.csv"), index=False, encoding="utf-8")
+
+    print("[CLEAN] Final counts:")
+    print(df[LABEL3].value_counts().sort_index())
+    df[LABEL3] = df[LABEL3].astype(int)
+    return df
+
+def stratified_split_70_10_20(df: pd.DataFrame) -> DatasetDict:
+    train_idx, val_idx, test_idx = [], [], []
+    for _, grp in df.groupby(LABEL3):
+        idx = grp.index.to_numpy()
+        _rng.shuffle(idx)
+        n = len(idx)
+        n_tr = int(round(0.70 * n))
+        n_va = int(round(0.10 * n))
+        n_te = n - n_tr - n_va
+        if n >= 1 and n_tr == 0:
+            n_tr = 1
+            n_te = n - n_tr - n_va
+        if n >= 10 and n_va == 0:
+            n_va = 1
+            n_te = n - n_tr - n_va
+        if n_te < 0:
+            give = min(n_va, -n_te)
+            n_va -= give
+            n_te += give
+        if n_te < 0:
+            give = min(max(n_tr - 1, 0), -n_te)
+            n_tr -= give
+            n_te += give
+        train_idx += idx[:n_tr].tolist()
+        val_idx += idx[n_tr:n_tr + n_va].tolist()
+        test_idx += idx[n_tr + n_va:n_tr + n_va + n_te].tolist()
+
+    tr = df.loc[train_idx, [TEXT_COL, LABEL3]].rename(columns={LABEL3: "labels"})
+    va = df.loc[val_idx, [TEXT_COL, LABEL3]].rename(columns={LABEL3: "labels"})
+    te = df.loc[test_idx, [TEXT_COL, LABEL3]].rename(columns={LABEL3: "labels"})
+
+    print(f"Actual sizes -> train {len(tr)}, val {len(va)}, test {len(te)}")
+
+    def to_ds(pdf):
+        ds = Dataset.from_pandas(pdf.reset_index(drop=True), preserve_index=False)
+        return ds.cast_column("labels", Value("int64"))
+
+    return DatasetDict(train=to_ds(tr), validation=to_ds(va), test=to_ds(te))
+
+def check_gpu_availability() -> Tuple[torch.device, str]:
+    print(f"CWD: {os.getcwd()}")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"Using CUDA: {torch.cuda.get_device_name(0)}")
+        return device, "cuda"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using Apple Silicon MPS backend.")
+        return device, "mps"
+    print("\n" + "=" * 60)
+    print("WARNING: No CUDA or MPS device available. Falling back to CPU.")
+    print("Training will be significantly slower but should remain correct.")
+    print("=" * 60 + "\n")
+    return torch.device("cpu"), "cpu"
+
+def compute_class_weights(y_train: np.ndarray, num_labels: int) -> np.ndarray:
+    y = np.asarray(y_train, dtype=np.int64)
+    counts = np.bincount(y, minlength=num_labels).astype(np.float64)
+    total = counts.sum()
+    weights = np.zeros(num_labels, dtype=np.float64)
+    nonzero = counts > 0
+    weights[nonzero] = total / (num_labels * counts[nonzero])
+    return weights
+
+def unlock_last_blocks_and_layernorms(model, n_last_blocks: int = 4):
+    for p in model.parameters():
+        p.requires_grad = False
+
+    if hasattr(model, "classifier"):
+        for p in model.classifier.parameters():
+            p.requires_grad = True
+
+    backbone = None
+    if hasattr(model, "bert") and hasattr(model.bert, "encoder"):
+        backbone = model.bert
+    elif hasattr(model, "roberta") and hasattr(model.roberta, "encoder"):
+        backbone = model.roberta
+    elif hasattr(model, "deberta") and hasattr(model.deberta, "encoder"):
+        backbone = model.deberta
+    elif hasattr(model, "electra") and hasattr(model.electra, "encoder"):
+        backbone = model.electra
+
+    if backbone is None:
+        return
+
+    layers = backbone.encoder.layer
+    n_last = max(1, min(n_last_blocks, len(layers)))
+    for layer in layers[-n_last:]:
+        for p in layer.parameters():
+            p.requires_grad = True
+
+    if hasattr(backbone, "pooler"):
+        for p in backbone.pooler.parameters():
+            p.requires_grad = True
 
 # Define RDropTrainer (extracted from finetune_high_accuracy.py)
 class RDropTrainer(Trainer):
@@ -230,6 +455,8 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     set_seed(SEED)
+    print(f"Using split protocol: {SPLIT_PROTOCOL}")
+    print(f"Reference checkpoint: {REFERENCE_CHECKPOINT}")
     
     # Load data
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
@@ -244,14 +471,14 @@ def main():
     test_tok = ds["test"].map(enc, batched=True, remove_columns=[TEXT_COL])
     
     results = []
-    baseline_result = None
+    reference_result = None
     
     for exp_config in ABLATION_EXPERIMENTS:
         result = train_ablation(exp_config, train_tok, val_tok, test_tok, device, device_type)
         results.append(result)
         
-        if "Baseline" in exp_config["name"]:
-            baseline_result = result
+        if exp_config["name"] == REFERENCE_EXPERIMENT_NAME:
+            reference_result = result
         
         print(f"\n✅ {exp_config['name']}: Accuracy={result['test_accuracy']:.4f}, F1={result['test_macro_f1']:.4f}")
     
@@ -260,13 +487,13 @@ def main():
     print("ABLATION STUDY RESULTS")
     print(f"{'='*60}")
     
-    if baseline_result:
-        baseline_acc = baseline_result["test_accuracy"]
-        print(f"\nBaseline Accuracy: {baseline_acc:.4f}")
-        print(f"\nImpact of Removing Components:")
+    if reference_result:
+        reference_acc = reference_result["test_accuracy"]
+        print(f"\nReference ({REFERENCE_EXPERIMENT_NAME}) Accuracy: {reference_acc:.4f}")
+        print(f"\nImpact vs Reference:")
         for r in results:
-            if r["experiment"] != baseline_result["experiment"]:
-                diff = r["test_accuracy"] - baseline_acc
+            if r["experiment"] != reference_result["experiment"]:
+                diff = r["test_accuracy"] - reference_acc
                 print(f"  {r['experiment']:40s} Acc: {r['test_accuracy']:.4f}  Change: {diff:+.4f} ({diff*100:+.2f}pp)")
     
     # Save results
@@ -277,6 +504,16 @@ def main():
     flat_output_path = os.path.join(RESULTS_DIR, "ablation_results.json")
     with open(flat_output_path, "w") as f:
         json.dump(results, f, indent=2)
+
+    metadata = {
+        "seed": SEED,
+        "split_protocol": SPLIT_PROTOCOL,
+        "reference_checkpoint": REFERENCE_CHECKPOINT,
+        "reference_experiment": REFERENCE_EXPERIMENT_NAME,
+    }
+    metadata_path = os.path.join(OUTPUT_DIR, "ablation_metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
 
     print(f"\nResults saved to: {output_path}")
     print(f"Flat results saved to: {flat_output_path}")
