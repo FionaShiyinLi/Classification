@@ -1,0 +1,144 @@
+CDSR.id,outcome.id,outcome,outcome.class
+CD000004,CMP-001.07,Perinatal mortality,0
+CD000004,CMP-001.02,Induction of labour (all indications),1
+CD000004,CMP-001.05,Low birthweight,1
+CD000006,CMP-002.04,Wound gaping - up to 10 days,1
+CD000006,CMP-001.03,Analgesia use - up to day 10,1
+CD000006,CMP-001.07,Removal of suture material - up to 3 months,1
+CD000006,CMP-001.06,Resuturing of wound - up to 3 months,2
+CD000006,CMP-001.05,"Superficial wound dehiscence, wound gaping up to day 10",2
+CD000006,CMP-002.06,Suture material removed - up to 3 months,2
+CD000006,CMP-001.01,Short-term pain: pain at day 3 or less (women experiencing any pain),2
+CD000006,CMP-001.02,Short-term pain: pain at day 4 - 10,2
+CD000006,CMP-001.08,Long-term pain - at 3 months postpartum,2
+CD000006,CMP-002.01,Short-term pain: at 3 days or less,2
+CD000006,CMP-002.02,Short-term pain: at 10 - 14 days,2
+CD000006,CMP-002.07,Long-term pain: pain at 3 months,2
+CD000006,CMP-003.02,Short-term pain: pain at 10 - 14 days,2
+CD000006,CMP-003.06,Long-term pain: pain at 3 months,2
+CD000006,CMP-001.09,Dyspareunia - at 3 months postpartum,2
+CD000006,CMP-002.08,Dyspareunia at 3 months,2
+CD000006,CMP-003.07,Dyspareunia at 3 months,2
+CD000009,CMP-003.01,NRT,1
+CD000009,CMP-003.03,Interventions of unknown effectiveness,1
+CD000009,CMP-003.02,Counselling and psychological approaches,1
+CD000009,CMP-001.01,Short-term smoking cessation,2
+CD000009,CMP-001.02,Long-term smoking cessation,2
+CD000009,CMP-002.01,Short-term smoking cessation,2
+CD000009,CMP-002.02,Long-term smoking cessation,2
+CD000009,CMP-004.01,Short-term smoking cessation,2
+CD000009,CMP-005.01,Short-term smoking cessation,2
+CD000009,CMP-006.01,Short-term smoking cessation,2
+CD000009,CMP-006.02,Long-term smoking cessation,2
+CD000009,CMP-007.01,Short-term smoking cessation,2
+CD000009,CMP-007.02,Long-term smoking cessation,2
+CD000009,CMP-008.01,Short-term smoking cessation,2
+CD000009,CMP-008.02,Long-term smoking cessation,2
+CD000012,CMP-001.12,Perinatal mortality,0
+CD000012,CMP-001.01,No analgesia/anesthesia,1
+CD000012,CMP-001.03,Epidural analgesia,1
+CD000012,CMP-001.04,Instrumental vaginal birth (forceps or ventouse),1
+CD000012,CMP-001.07,Episiotomy,1
+CD000012,CMP-001.02,Oxytocin augmentation of labour,1
+CD000012,CMP-001.05,Caesarean birth,1
+CD000012,CMP-001.06,Spontaneous vaginal birth,1
+CD000012,CMP-001.08,Postpartum hemorrhage,1
+CD000012,CMP-001.09,5-minute Apgar score &lt; 7,1
+CD000012,CMP-002.01,Spontaneous vaginal birth,1
+CD000012,CMP-001.11,Serious perinatal morbidity or mortality,1
+CD000012,CMP-001.13,Serious maternal morbidity or mortality,1
+CD000012,CMP-002.02,Serious perinatal morbidity or mortality,1
+CD000012,CMP-002.03,Serious maternal morbidity or mortality,1
+CD000012,CMP-001.10,Admission to neonatal intensive care unit,1
+CD000012,CMP-001.15,Very positive views of care,2
+CD000013,CMP-001.16,Perinatal death,0
+CD000013,CMP-001.01,"Caesarean section, overall",1
+CD000013,CMP-001.02,Caesarean for suspected fetal distress,1
+CD000013,CMP-001.05,Persistent variable decelerations,1
+CD000013,CMP-001.07,Meconium-stained amniotic fluid,1
+CD000013,CMP-001.10,Intrapartum maternal temperature &gt; 38ºC,1
+CD000013,CMP-001.11,Apgar score &lt; 7 at 1 minute,1
+CD000013,CMP-001.12,Apgar score &lt; 7 at 5 minutes,1
+CD000013,CMP-001.14,Low cord arterial pH (&lt; 7.2 or as defined by trial authors),1
+CD000013,CMP-001.15,Neonatal sepsis,1
+CD000013,CMP-001.17,Postpartum endometritis,1
+CD000013,CMP-001.21,Meconium below vocal cords,1
+CD000013,CMP-002.03,Caesarean for suspected fetal distress,1
+CD000013,CMP-002.06,Apgar score &lt; 7 at 5 minutes,1
+CD000013,CMP-002.07,Low cord pH (&lt; 7.20 or as defined by trialists),1
+CD000013,CMP-001.03,Forceps/vacuum-suspected fetal distress,1
+CD000013,CMP-001.04,"Forceps or vacuum delivery, overall",1
+CD000013,CMP-001.20,Admission to ICU/high-care nursery,1
+CD000013,CMP-001.22,Maternal hospital stay &gt; 3 days,1
+CD000013,CMP-001.23,Neonatal hospital stay &gt; 3 days,1
+CD000014,CMP-001.15,Perinatal death,0
+CD000014,CMP-001.04,Heavy meconium staining,1
+CD000014,CMP-001.05,Variable decelerations,1
+CD000014,CMP-001.06,Caesarean for fetal distress,1
+CD000014,CMP-001.07,Caesarean overall,1
+CD000014,CMP-001.08,1-minute Apgar &lt; 4,1
+CD000014,CMP-001.09,1-minute Apgar &lt; 7,1
+CD000014,CMP-001.10,5-minute Apgar &lt; 7,1
+CD000014,CMP-001.11,Umbilical artery pH &lt; 7.20,1
+CD000014,CMP-001.12,Meconium below vocal cords,1
+CD000014,CMP-001.16,Puerperal pyrexia,1
+CD000014,CMP-001.17,Puerperal endometritis,1
+CD000014,CMP-001.18,Oxytocin augmentation,1
+CD000014,CMP-001.22,Instrumental vaginal delivery for fetal distress,1
+CD000014,CMP-001.23,Instrumental vaginal delivery,1
+CD000014,CMP-001.13,Neonatal ventilation/neonatal intensive care unit admission,1
+CD000014,CMP-001.01,Meconium aspiration syndrome,2
+CD000016,CMP-001.02,Adverse events,2
+CD000016,CMP-003.02,Adverse events,2
+CD000016,CMP-001.01,Parasitological conversion,2
+CD000016,CMP-002.01,Parasitological conversion on day 7,2
+CD000016,CMP-003.01,Parasitological conversion,2
+CD000016,CMP-004.01,Parasitological conversion,2
+CD000016,CMP-005.01,Parasitological conversion,2
+CD000016,CMP-006.01,Parasitological conversion,2
+CD000019,CMP-002.01,Death prior to hospital discharge,0
+CD000019,CMP-001.01,Death prior to hospital discharge,0
+CD000019,CMP-003.01,Death prior to hospital discharge,0
+CD000019,CMP-004.01,Death prior to hospital discharge,0
+CD000019,CMP-005.01,Death prior to hospital discharge,0
+CD000019,CMP-001.15,Low Apgar score at 5 minutes,1
+CD000019,CMP-001.32,Maternal nausea,1
+CD000019,CMP-001.36,Maternal facial flushing,1
+CD000019,CMP-001.04,Chronic lung disease or death,1
+CD000019,CMP-001.09,Intraventricular haemorrhage,1
+CD000019,CMP-001.10,Severe intraventricular haemorrhage,1
+CD000019,CMP-001.12,Pulmonary haemorrhage,1
+CD000019,CMP-001.13,Necrotising enterocolitis,1
+CD000019,CMP-001.14,Patent ductus arteriosus,1
+CD000019,CMP-002.04,Chronic lung disease or death,1
+CD000019,CMP-003.04,Chronic lung disease or death,1
+CD000019,CMP-004.04,Chronic lung disease or death,1
+CD000019,CMP-005.04,Chronic lung disease or death,1
+CD000019,CMP-001.05,Need for oxygen therapy,1
+CD000019,CMP-001.07,Use of respiratory support,1
+CD000019,CMP-001.08,Admission to neonatal intensive care unit,1
+CD000019,CMP-001.16,Use of surfactant,1
+CD000019,CMP-002.05,Need for oxygen therapy,1
+CD000019,CMP-002.07,Use of respiratory support,1
+CD000019,CMP-003.05,Need for oxygen therapy,1
+CD000019,CMP-003.07,Use of respiratory support,1
+CD000019,CMP-004.05,Need for oxygen therapy,1
+CD000019,CMP-004.07,Use of respiratory support,1
+CD000019,CMP-005.05,Need for oxygen therapy,1
+CD000019,CMP-005.07,Use of respiratory support,1
+CD000019,CMP-001.02,Chronic lung disease,2
+CD000019,CMP-002.02,Chronic lung disease,2
+CD000019,CMP-003.02,Chronic lung disease,2
+CD000019,CMP-004.02,Chronic lung disease,2
+CD000019,CMP-005.02,Chronic lung disease,2
+CD000019,CMP-001.03,Respiratory distress syndrome,2
+CD000019,CMP-001.06,Severe respiratory distress syndrome,2
+CD000019,CMP-001.11,Air leak syndrome,2
+CD000019,CMP-002.03,Respiratory distress syndrome,2
+CD000019,CMP-002.06,Severe respiratory distress syndrome,2
+CD000019,CMP-003.03,Respiratory distress syndrome,2
+CD000019,CMP-003.06,Severe respiratory distress syndrome,2
+CD000019,CMP-004.03,Respiratory distress syndrome,2
+CD000019,CMP-004.06,Severe respiratory distress syndrome,2
+CD000019,CMP-005.03,Respiratory distress syndrome,2
+CD000019,CMP-005.06,Severe respiratory distress syndrome,2
