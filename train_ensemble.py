@@ -2,6 +2,15 @@
 # Train multiple models with different seeds for ensemble
 # Updated to use tuned hyperparameters (lr=3e-5, warmup=0.06, 4 unfrozen blocks, R-Drop α=1.0)
 
+import os, json, re
+import numpy as np
+import pandas as pd
+from typing import List
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from sklearn.metrics import accuracy_score, f1_score, classification_report
+from datasets import Dataset, DatasetDict, Value
+
 # Configuration
 SEED_LIST = [42, 123, 456, 789, 1011]  # 5 different seeds
 CSV_3CLS = "outcome_3cls.csv"
