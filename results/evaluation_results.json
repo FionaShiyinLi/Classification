@@ -1,0 +1,233 @@
+[
+  {
+    "method": "Fine-Tuned Bioformer-8L (validation-selected primary checkpoint)",
+    "accuracy": 0.9153897401732178,
+    "accuracy_ci": [
+      0.9067288474350433,
+      0.9240506329113924
+    ],
+    "macro_f1": 0.9151846159003062,
+    "macro_f1_ci": [
+      0.9047354255107073,
+      0.9247939506483538
+    ],
+    "weighted_f1": 0.9154229974842245,
+    "kappa": 0.84978603188701,
+    "per_class_f1": {
+      "Objective": 0.9157733537519143,
+      "Semi-objective": 0.9065989847715736,
+      "Subjective": 0.9231815091774304
+    },
+    "confusion_matrix": [
+      [
+        299,
+        13,
+        1
+      ],
+      [
+        29,
+        1786,
+        152
+      ],
+      [
+        12,
+        174,
+        2037
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.8794117647058823,
+        "recall": 0.9552715654952076,
+        "f1-score": 0.9157733537519143,
+        "support": 313.0
+      },
+      "Semi-objective": {
+        "precision": 0.9052204764318297,
+        "recall": 0.9079816980172852,
+        "f1-score": 0.9065989847715736,
+        "support": 1967.0
+      },
+      "Subjective": {
+        "precision": 0.9301369863013699,
+        "recall": 0.9163292847503374,
+        "f1-score": 0.9231815091774304,
+        "support": 2223.0
+      },
+      "accuracy": 0.9153897401732178,
+      "macro avg": {
+        "precision": 0.9049230758130272,
+        "recall": 0.9265275160876101,
+        "f1-score": 0.9151846159003062,
+        "support": 4503.0
+      },
+      "weighted avg": {
+        "precision": 0.9157270886169876,
+        "recall": 0.9153897401732178,
+        "f1-score": 0.9154229974842245,
+        "support": 4503.0
+      }
+    },
+    "inference_time": 33.199543714523315,
+    "time_per_sample": 0.00737276120686727,
+    "model_path": "/Users/shiyinli/Documents/Classification/results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
+    "artifact_id": "table1_primary_reference_bioformer8l",
+    "run_family": "primary_evaluation",
+    "paper_role": "Primary Bioformer-8L reference checkpoint selected by validation macro F1 in the reduced sweep",
+    "nominal_hparams": {
+      "learning_rate": 3e-05,
+      "warmup_ratio": 0.04,
+      "unfreeze_blocks": 8,
+      "rdrop_alpha": 1.0
+    },
+    "provenance_note": "This is the validation-selected primary reference checkpoint used for the main evaluation. It was chosen by validation macro F1 within the reduced 16-run sweep and then evaluated once on the held-out test set."
+  },
+  {
+    "method": "LLM API (openai/gpt-5.2)",
+    "accuracy": 0.5929380413057961,
+    "accuracy_ci": [
+      0.5782811459027315,
+      0.607372862536087
+    ],
+    "macro_f1": 0.6285279682142603,
+    "macro_f1_ci": [
+      0.6131151194412042,
+      0.6442159610435015
+    ],
+    "weighted_f1": 0.5480901081584166,
+    "kappa": 0.3101489356367375,
+    "per_class_f1": {
+      "Objective": 0.8139223560910308,
+      "Semi-objective": 0.660201417381574,
+      "Subjective": 0.41146013117017605
+    },
+    "confusion_matrix": [
+      [
+        304,
+        9,
+        0
+      ],
+      [
+        119,
+        1770,
+        78
+      ],
+      [
+        11,
+        1616,
+        596
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.7004608294930875,
+        "recall": 0.9712460063897763,
+        "f1-score": 0.8139223560910308,
+        "support": 313.0
+      },
+      "Semi-objective": {
+        "precision": 0.5213549337260678,
+        "recall": 0.8998474834773768,
+        "f1-score": 0.660201417381574,
+        "support": 1967.0
+      },
+      "Subjective": {
+        "precision": 0.884272997032641,
+        "recall": 0.2681061628430049,
+        "f1-score": 0.41146013117017605,
+        "support": 2223.0
+      },
+      "accuracy": 0.5929380413057961,
+      "macro avg": {
+        "precision": 0.7020295867505988,
+        "recall": 0.713066550903386,
+        "f1-score": 0.6285279682142603,
+        "support": 4503.0
+      },
+      "weighted avg": {
+        "precision": 0.7129665260213351,
+        "recall": 0.5929380413057961,
+        "f1-score": 0.5480901081584166,
+        "support": 4503.0
+      }
+    },
+    "inference_time": 3092.389566898346,
+    "time_per_sample": 0.6867398549629904
+  },
+  {
+    "method": "Hybrid (Fine-tuned + LLM fallback)",
+    "accuracy": 0.9122807017543859,
+    "accuracy_ci": [
+      0.9040639573617588,
+      0.9200532978014657
+    ],
+    "macro_f1": 0.9119986237992775,
+    "macro_f1_ci": [
+      0.9009494868295002,
+      0.9224101390635606
+    ],
+    "weighted_f1": 0.9124309326463443,
+    "kappa": 0.8446747538588874,
+    "per_class_f1": {
+      "Objective": 0.9118541033434651,
+      "Semi-objective": 0.9054726368159204,
+      "Subjective": 0.9186691312384473
+    },
+    "confusion_matrix": [
+      [
+        300,
+        13,
+        0
+      ],
+      [
+        30,
+        1820,
+        117
+      ],
+      [
+        15,
+        220,
+        1988
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.8695652173913043,
+        "recall": 0.9584664536741214,
+        "f1-score": 0.9118541033434651,
+        "support": 313.0
+      },
+      "Semi-objective": {
+        "precision": 0.8865075499269361,
+        "recall": 0.9252669039145908,
+        "f1-score": 0.9054726368159204,
+        "support": 1967.0
+      },
+      "Subjective": {
+        "precision": 0.9444180522565321,
+        "recall": 0.8942869995501574,
+        "f1-score": 0.9186691312384473,
+        "support": 2223.0
+      },
+      "accuracy": 0.9122807017543859,
+      "macro avg": {
+        "precision": 0.9001636065249242,
+        "recall": 0.9260067857129566,
+        "f1-score": 0.9119986237992775,
+        "support": 4503.0
+      },
+      "weighted avg": {
+        "precision": 0.9139186306720037,
+        "recall": 0.9122807017543859,
+        "f1-score": 0.9124309326463443,
+        "support": 4503.0
+      }
+    },
+    "inference_time": 84.4497480392456,
+    "time_per_sample": 0.018754107936763402,
+    "hybrid_stats": {
+      "fine_tuned_only": 4288,
+      "llm_fallback": 215
+    }
+  }
+]

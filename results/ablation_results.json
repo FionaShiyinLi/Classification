@@ -1,0 +1,122 @@
+[
+  {
+    "experiment": "Ablation reference: R-Drop + Class Weights + 2 Blocks",
+    "config": {
+      "name": "Ablation reference: R-Drop + Class Weights + 2 Blocks",
+      "artifact_id": "table4_ablation_reference_2block",
+      "run_family": "ablation_retrain",
+      "paper_role": "Reference run within the ablation study only",
+      "provenance_note": "This reference is internal to the ablation study and should not be confused with the fixed primary evaluation checkpoint used in the main manuscript.",
+      "rdrop_alpha": 1.0,
+      "use_class_weights": true,
+      "unfreeze_blocks": 2
+    },
+    "artifact_id": "table4_ablation_reference_2block",
+    "run_family": "ablation_retrain",
+    "paper_role": "Reference run within the ablation study only",
+    "provenance_note": "This reference is internal to the ablation study and should not be confused with the fixed primary evaluation checkpoint used in the main manuscript.",
+    "test_accuracy": 0.8891849877859205,
+    "test_macro_f1": 0.8977493252017771,
+    "is_primary_reference": false
+  },
+  {
+    "experiment": "No R-Drop",
+    "config": {
+      "name": "No R-Drop",
+      "artifact_id": "table4_ablation_no_rdrop",
+      "run_family": "ablation_retrain",
+      "paper_role": "Ablation retraining run without R-Drop",
+      "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+      "rdrop_alpha": 0.0,
+      "use_class_weights": true,
+      "unfreeze_blocks": 2
+    },
+    "artifact_id": "table4_ablation_no_rdrop",
+    "run_family": "ablation_retrain",
+    "paper_role": "Ablation retraining run without R-Drop",
+    "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+    "test_accuracy": 0.8967355096602265,
+    "test_macro_f1": 0.9051026060318996,
+    "is_primary_reference": false
+  },
+  {
+    "experiment": "No Class Weights",
+    "config": {
+      "name": "No Class Weights",
+      "artifact_id": "table4_ablation_no_class_weights",
+      "run_family": "ablation_retrain",
+      "paper_role": "Ablation retraining run without class weights",
+      "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+      "rdrop_alpha": 1.0,
+      "use_class_weights": false,
+      "unfreeze_blocks": 2
+    },
+    "artifact_id": "table4_ablation_no_class_weights",
+    "run_family": "ablation_retrain",
+    "paper_role": "Ablation retraining run without class weights",
+    "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+    "test_accuracy": 0.8891849877859205,
+    "test_macro_f1": 0.8985899485475674,
+    "is_primary_reference": false
+  },
+  {
+    "experiment": "Unfreeze 1 Block",
+    "config": {
+      "name": "Unfreeze 1 Block",
+      "artifact_id": "table4_ablation_unfreeze1",
+      "run_family": "ablation_retrain",
+      "paper_role": "Ablation retraining run testing one unfrozen block",
+      "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+      "rdrop_alpha": 1.0,
+      "use_class_weights": true,
+      "unfreeze_blocks": 1
+    },
+    "artifact_id": "table4_ablation_unfreeze1",
+    "run_family": "ablation_retrain",
+    "paper_role": "Ablation retraining run testing one unfrozen block",
+    "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+    "test_accuracy": 0.8580946035976016,
+    "test_macro_f1": 0.8687935359776161,
+    "is_primary_reference": false
+  },
+  {
+    "experiment": "Unfreeze 8 Blocks",
+    "config": {
+      "name": "Unfreeze 8 Blocks",
+      "artifact_id": "table4_ablation_unfreeze8",
+      "run_family": "ablation_retrain",
+      "paper_role": "Ablation retraining run testing eight unfrozen blocks",
+      "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+      "rdrop_alpha": 1.0,
+      "use_class_weights": true,
+      "unfreeze_blocks": 8
+    },
+    "artifact_id": "table4_ablation_unfreeze8",
+    "run_family": "ablation_retrain",
+    "paper_role": "Ablation retraining run testing eight unfrozen blocks",
+    "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+    "test_accuracy": 0.9158338885187652,
+    "test_macro_f1": 0.920625977997089,
+    "is_primary_reference": false
+  },
+  {
+    "experiment": "No R-Drop + No Class Weights",
+    "config": {
+      "name": "No R-Drop + No Class Weights",
+      "artifact_id": "table4_ablation_no_rdrop_no_weights",
+      "run_family": "ablation_retrain",
+      "paper_role": "Ablation retraining run without R-Drop and class weights",
+      "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+      "rdrop_alpha": 0.0,
+      "use_class_weights": false,
+      "unfreeze_blocks": 2
+    },
+    "artifact_id": "table4_ablation_no_rdrop_no_weights",
+    "run_family": "ablation_retrain",
+    "paper_role": "Ablation retraining run without R-Drop and class weights",
+    "provenance_note": "This is an ablation retraining run, not the fixed primary evaluation checkpoint and not a hyperparameter-search sweep result.",
+    "test_accuracy": 0.8987341772151899,
+    "test_macro_f1": 0.907635405557195,
+    "is_primary_reference": false
+  }
+]

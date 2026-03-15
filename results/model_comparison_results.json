@@ -1,0 +1,26 @@
+[
+  {
+    "model_name": "bioformers/bioformer-8L (validation-selected primary checkpoint)",
+    "test_accuracy": 0.9153897401732178,
+    "test_macro_f1": 0.9151846159003062,
+    "model_path": "/Users/shiyinli/Documents/Classification/results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model"
+  },
+  {
+    "model_name": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract",
+    "test_accuracy": 0.9222740395292027,
+    "test_macro_f1": 0.9248589877064076,
+    "model_path": "./outputs_model_comparison/microsoft_BiomedNLP-PubMedBERT-base-uncased-abstract_best"
+  },
+  {
+    "model_name": "dmis-lab/biobert-base-cased-v1.2",
+    "test_accuracy": 0.9207195203197868,
+    "test_macro_f1": 0.9228132621877174,
+    "model_path": "./outputs_model_comparison/dmis-lab_biobert-base-cased-v1.2_best"
+  },
+  {
+    "model_name": "allenai/scibert_scivocab_uncased",
+    "test_accuracy": 0.9173884077281812,
+    "test_macro_f1": 0.9235162666798287,
+    "model_path": "./outputs_model_comparison/allenai_scibert_scivocab_uncased_best"
+  }
+]
