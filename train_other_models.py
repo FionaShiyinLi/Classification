@@ -16,33 +16,38 @@ from datasets import Dataset, DatasetDict, Value
 
 # Configuration
 SEED = 42
-CSV_3CLS = "outcome_3cls.csv"
+CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
+REFERENCE_CHECKPOINT = os.getenv(
+    "OUTCOME_REFERENCE_CHECKPOINT",
+    "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
+)
+LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
+SKIP_COMPARATOR_TRAINING = os.getenv("OUTCOME_SKIP_COMPARATOR_TRAINING", "0").strip().lower() in {"1", "true", "yes"}
 
 # Models to compare
 MODELS_TO_TEST = [
-    "bioformers/bioformer-8L",  # Baseline
     "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract",  # PubMedBERT
     "dmis-lab/biobert-base-cased-v1.2",  # BioBERT (if available)
     "allenai/scibert_scivocab_uncased",  # SciBERT
 ]
 
-# Hyperparameters (same as finetune_high_accuracy.py)
+# Hyperparameters matched to the validation-selected primary Bioformer checkpoint
 MAX_LENGTH = 128
 EPOCHS = 8
 LR = 3e-5
 BATCH_SIZE = 16
 GRAD_ACCUM = 1
-WARMUP_R = 0.06
+WARMUP_R = 0.04
 WEIGHT_DECAY = 0.02
 LABEL_SMOOTH = 0.0
 PATIENCE = 2
 RDROP_ALPHA = 1.0
-UNFREEZE_BLOCKS = 4
+UNFREEZE_BLOCKS = 8
 
 OUTPUT_DIR = "./outputs_model_comparison"
 RESULTS_DIR = "./results"
@@ -183,7 +188,7 @@ def load_and_clean(csv_path: str, keep_duplicates: bool = False, save_report: bo
 def stratified_split_70_10_20(df: pd.DataFrame) -> DatasetDict:
     train_idx, val_idx, test_idx = [], [], []
     for _, grp in df.groupby(LABEL3):
-        idx = grp.index.to_numpy()
+        idx = grp.index.to_numpy(copy=True)
         _rng.shuffle(idx)
         n = len(idx)
         n_tr = int(round(0.70 * n))
@@ -333,7 +338,9 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     print(f"{'='*60}")
     
     try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+        )
     except:
         print(f"  ⚠️  Skipping {model_name} - tokenizer not available")
         return None
@@ -342,8 +349,10 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     
     try:
         config = AutoConfig.from_pretrained(model_name, num_labels=NUM_LABELS, 
-                                           id2label=ID2LABEL, label2id=LABEL2ID)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, config=config)
+                                           id2label=ID2LABEL, label2id=LABEL2ID, local_files_only=LOCAL_FILES_ONLY)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, config=config, local_files_only=LOCAL_FILES_ONLY
+        )
     except Exception as e:
         print(f"  ⚠️  Skipping {model_name} - {e}")
         return None
@@ -359,6 +368,7 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     model_safe_name = model_name.replace('/', '_')
     common_kwargs = dict(
         output_dir=os.path.join(OUTPUT_DIR, model_safe_name),
+        overwrite_output_dir=True,
         save_strategy="epoch", load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
         learning_rate=LR, lr_scheduler_type="cosine",
@@ -409,11 +419,61 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
         "model_path": model_dir
     }
 
+
+def evaluate_reference_checkpoint(test_ds, device):
+    """Evaluate the validation-selected Bioformer primary checkpoint without retraining."""
+    if not os.path.exists(REFERENCE_CHECKPOINT):
+        print(f"  ⚠️  Reference checkpoint not found: {REFERENCE_CHECKPOINT}")
+        return None
+
+    print(f"\n{'='*60}")
+    print("Evaluating validation-selected Bioformer primary checkpoint")
+    print(f"{'='*60}")
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        REFERENCE_CHECKPOINT, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+    )
+    model = AutoModelForSequenceClassification.from_pretrained(
+        REFERENCE_CHECKPOINT, local_files_only=LOCAL_FILES_ONLY
+    ).to(device)
+    model.eval()
+
+    texts = list(test_ds[TEXT_COL])
+    labels = np.asarray(test_ds["labels"], dtype=np.int64)
+    preds = []
+    batch_size = BATCH_SIZE
+
+    with torch.no_grad():
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            inputs = tokenizer(
+                batch,
+                return_tensors="pt",
+                truncation=True,
+                max_length=MAX_LENGTH,
+                padding=True,
+            )
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            logits = model(**inputs).logits
+            preds.extend(np.argmax(logits.detach().cpu().numpy(), axis=-1).tolist())
+
+    preds = np.asarray(preds, dtype=np.int64)
+    return {
+        "model_name": "bioformers/bioformer-8L (validation-selected primary checkpoint)",
+        "test_accuracy": float(accuracy_score(labels, preds)),
+        "test_macro_f1": float(f1_score(labels, preds, average="macro")),
+        "model_path": REFERENCE_CHECKPOINT,
+    }
+
 def main():
     device, device_type = check_gpu_availability()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     set_seed(SEED)
+    print(f"Dataset CSV: {CSV_3CLS}")
+    print(f"Reference checkpoint: {REFERENCE_CHECKPOINT}")
+    print(f"Local-files-only model loading: {LOCAL_FILES_ONLY}")
+    print(f"Skip comparator retraining: {SKIP_COMPARATOR_TRAINING}")
     
     # Load data
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
@@ -423,10 +483,23 @@ def main():
     # We'll tokenize separately for each model
     
     results = []
+    reference_result = evaluate_reference_checkpoint(ds["test"], device)
+    if reference_result is not None:
+        results.append(reference_result)
+        print(
+            f"\n✅ {reference_result['model_name']}: "
+            f"Accuracy={reference_result['test_accuracy']:.4f}, "
+            f"F1={reference_result['test_macro_f1']:.4f}"
+        )
     
-    for model_name in MODELS_TO_TEST:
+    if SKIP_COMPARATOR_TRAINING:
+        print("\nSkipping comparator retraining by request (OUTCOME_SKIP_COMPARATOR_TRAINING=1).")
+
+    for model_name in ([] if SKIP_COMPARATOR_TRAINING else MODELS_TO_TEST):
         try:
-            tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+            )
             def enc(b): 
                 return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=MAX_LENGTH)
             
@@ -463,4 +536,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

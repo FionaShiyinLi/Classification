@@ -1,6 +1,6 @@
 # filename: train_ensemble.py
 # Train multiple models with different seeds for ensemble
-# Updated to use tuned hyperparameters (lr=3e-5, warmup=0.06, 4 unfrozen blocks, R-Drop α=1.0)
+# Updated to use the validation-selected primary schedule (lr=3e-5, warmup=0.04, 8 unfrozen blocks, R-Drop α=1.0)
 
 import os, json, re
 import numpy as np
@@ -13,28 +13,29 @@ from datasets import Dataset, DatasetDict, Value
 
 # Configuration
 SEED_LIST = [42, 123, 456, 789, 1011]  # 5 different seeds
-CSV_3CLS = "outcome_3cls.csv"
+CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 MODEL_NAME = "bioformers/bioformer-8L"
+LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
 OUTPUT_DIR = "./outputs_ensemble"
 DATA_PREP_OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
 RESULTS_DIR = "./results"
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 
-# Tuned hyperparameters (Section 3.1.3)
+# Hyperparameters matched to the validation-selected primary Bioformer checkpoint
 MAX_LENGTH = 128
 EPOCHS = 8
 LR = 3e-5
 BATCH_SIZE = 16
 GRAD_ACCUM = 1
-WARMUP_R = 0.06
+WARMUP_R = 0.04
 WEIGHT_DECAY = 0.02
 LABEL_SMOOTH = 0.0
 PATIENCE = 2
 RDROP_ALPHA = 1.0
-UNFREEZE_BLOCKS = 4
+UNFREEZE_BLOCKS = 8
 
 _DASHES = "".join(["\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"])
 _DASH_RE = re.compile(f"[{_DASHES}]")
@@ -175,7 +176,7 @@ def load_and_clean(csv_path: str, keep_duplicates: bool = False, save_report: bo
 def stratified_split_70_10_20(df: pd.DataFrame) -> DatasetDict:
     train_idx, val_idx, test_idx = [], [], []
     for _, grp in df.groupby(LABEL3):
-        idx = grp.index.to_numpy()
+        idx = grp.index.to_numpy(copy=True)
         _rng.shuffle(idx)
         n = len(idx)
         n_tr = int(round(0.70 * n))
@@ -341,12 +342,14 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     print(f"Training Model {seed} (Seed: {seed})")
     print(f"{'='*60}")
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
     config = AutoConfig.from_pretrained(MODEL_NAME, num_labels=NUM_LABELS, 
-                                       id2label=ID2LABEL, label2id={v:k for k,v in ID2LABEL.items()})
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
+                                       id2label=ID2LABEL, label2id={v:k for k,v in ID2LABEL.items()}, local_files_only=LOCAL_FILES_ONLY)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME, config=config, local_files_only=LOCAL_FILES_ONLY
+    )
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=UNFREEZE_BLOCKS)
     
@@ -356,10 +359,11 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     y_train = np.array(train_tok["labels"])
     class_weights = torch.tensor(compute_class_weights(y_train, NUM_LABELS), dtype=torch.float32)
     
-    # Hyperparameters matched to tuned configuration (Section 3.1.3)
+    # Hyperparameters matched to the validation-selected primary checkpoint
     
     common_kwargs = dict(
         output_dir=os.path.join(OUTPUT_DIR, f"model_seed_{seed}"),
+        overwrite_output_dir=True,
         save_strategy="epoch", load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
         learning_rate=LR, lr_scheduler_type="cosine",
@@ -422,8 +426,8 @@ def ensemble_predict(model_paths: List[str], texts: List[str], max_length: int =
                          ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
 
     for model_path in model_paths:
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=LOCAL_FILES_ONLY)
+        model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=LOCAL_FILES_ONLY)
         model.to(device)
         model.eval()
 
@@ -458,7 +462,7 @@ def main():
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
     ds = stratified_split_70_10_20(df)
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     def enc(b): 
         return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=MAX_LENGTH)
     
@@ -508,7 +512,13 @@ def main():
             "accuracy": float(ensemble_accuracy),
             "macro_f1": float(ensemble_f1),
             "improvement_over_mean": float(ensemble_accuracy - np.mean(individual_accs))
-        }
+        },
+        "summary": {
+            "mean_individual_accuracy": float(np.mean(individual_accs)),
+            "std_individual_accuracy": float(np.std(individual_accs)),
+            "best_individual_accuracy": float(np.max(individual_accs)),
+            "worst_individual_accuracy": float(np.min(individual_accs)),
+        },
     }
     
     output_path = os.path.join(OUTPUT_DIR, "ensemble_results.json")
@@ -524,4 +534,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -15,19 +15,24 @@ from sklearn.metrics import accuracy_score, f1_score
 from datasets import Dataset, DatasetDict, Value
 
 SEED = 42
-CSV_3CLS = "outcome_3cls.csv"
+CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 MODEL_NAME = "bioformers/bioformer-8L"
+INIT_CHECKPOINT_PATH = os.getenv(
+    "OUTCOME_REFERENCE_CHECKPOINT",
+    "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
+)
+LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 
 OUTPUT_DIR = "./outputs_ablation"
 RESULTS_DIR = "./results"
-REFERENCE_CHECKPOINT = "./results/outputs_hparam_search/lr3e-05_wu0.06_uf4_rd1.0/best_model"
+REFERENCE_CHECKPOINT = INIT_CHECKPOINT_PATH
 SPLIT_PROTOCOL = "canonical_split_A_seed42_70_10_20"
-REFERENCE_EXPERIMENT_NAME = "Unfreeze 4 Blocks"
+REFERENCE_EXPERIMENT_NAME = "Ablation reference: R-Drop + Class Weights + 2 Blocks"
 
 # Baseline config
 BASELINE_CONFIG = {
@@ -52,43 +57,79 @@ _rng = np.random.default_rng(SEED)
 # Ablation experiments
 ABLATION_EXPERIMENTS = [
     {
-        "name": "Baseline (R-Drop + Class Weights + 2 blocks)",
+        "name": "Ablation reference: R-Drop + Class Weights + 2 Blocks",
+        "artifact_id": "table4_ablation_reference_2block",
+        "run_family": "ablation_retrain",
+        "paper_role": "Reference run within the ablation study only",
+        "provenance_note": (
+            "This reference is internal to the ablation study and should not be confused "
+            "with the fixed primary evaluation checkpoint used in the main manuscript."
+        ),
         "rdrop_alpha": 1.0,
         "use_class_weights": True,
         "unfreeze_blocks": 2,
     },
     {
         "name": "No R-Drop",
+        "artifact_id": "table4_ablation_no_rdrop",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run without R-Drop",
+        "provenance_note": (
+            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
+            "and not a hyperparameter-search sweep result."
+        ),
         "rdrop_alpha": 0.0,
         "use_class_weights": True,
         "unfreeze_blocks": 2,
     },
     {
         "name": "No Class Weights",
+        "artifact_id": "table4_ablation_no_class_weights",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run without class weights",
+        "provenance_note": (
+            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
+            "and not a hyperparameter-search sweep result."
+        ),
         "rdrop_alpha": 1.0,
         "use_class_weights": False,
         "unfreeze_blocks": 2,
     },
     {
         "name": "Unfreeze 1 Block",
+        "artifact_id": "table4_ablation_unfreeze1",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run testing one unfrozen block",
+        "provenance_note": (
+            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
+            "and not a hyperparameter-search sweep result."
+        ),
         "rdrop_alpha": 1.0,
         "use_class_weights": True,
         "unfreeze_blocks": 1,
     },
     {
-        "name": "Unfreeze 4 Blocks",
-        "rdrop_alpha": 1.0,
-        "use_class_weights": True,
-        "unfreeze_blocks": 4,
-    },
-    {
         "name": "Unfreeze 8 Blocks",
+        "artifact_id": "table4_ablation_unfreeze8",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run testing eight unfrozen blocks",
+        "provenance_note": (
+            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
+            "and not a hyperparameter-search sweep result."
+        ),
         "rdrop_alpha": 1.0,
         "use_class_weights": True,
         "unfreeze_blocks": 8,
     },
     {
         "name": "No R-Drop + No Class Weights",
+        "artifact_id": "table4_ablation_no_rdrop_no_weights",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run without R-Drop and class weights",
+        "provenance_note": (
+            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
+            "and not a hyperparameter-search sweep result."
+        ),
         "rdrop_alpha": 0.0,
         "use_class_weights": False,
         "unfreeze_blocks": 2,
@@ -227,7 +268,7 @@ def load_and_clean(csv_path: str, keep_duplicates: bool = False, save_report: bo
 def stratified_split_70_10_20(df: pd.DataFrame) -> DatasetDict:
     train_idx, val_idx, test_idx = [], [], []
     for _, grp in df.groupby(LABEL3):
-        idx = grp.index.to_numpy()
+        idx = grp.index.to_numpy(copy=True)
         _rng.shuffle(idx)
         n = len(idx)
         n_tr = int(round(0.70 * n))
@@ -378,12 +419,14 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
     print(f"Experiment: {config['name']}")
     print(f"{'='*60}")
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(INIT_CHECKPOINT_PATH, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    model_config = AutoConfig.from_pretrained(MODEL_NAME, num_labels=NUM_LABELS,
-                                             id2label=ID2LABEL, label2id=LABEL2ID)
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, config=model_config)
+    model_config = AutoConfig.from_pretrained(INIT_CHECKPOINT_PATH, num_labels=NUM_LABELS,
+                                             id2label=ID2LABEL, label2id=LABEL2ID, local_files_only=LOCAL_FILES_ONLY)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        INIT_CHECKPOINT_PATH, config=model_config, local_files_only=LOCAL_FILES_ONLY
+    )
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=config["unfreeze_blocks"])
     
@@ -446,23 +489,30 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
     return {
         "experiment": config["name"],
         "config": config,
+        "init_checkpoint": INIT_CHECKPOINT_PATH,
+        "artifact_id": config["artifact_id"],
+        "run_family": config["run_family"],
+        "paper_role": config["paper_role"],
+        "provenance_note": config["provenance_note"],
         "test_accuracy": float(test_metrics.get("eval_accuracy", 0)),
         "test_macro_f1": float(test_metrics.get("eval_macro_f1", 0)),
     }
-
 def main():
     device, device_type = check_gpu_availability()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     set_seed(SEED)
     print(f"Using split protocol: {SPLIT_PROTOCOL}")
+    print(f"Dataset CSV: {CSV_3CLS}")
     print(f"Reference checkpoint: {REFERENCE_CHECKPOINT}")
+    print(f"Initialization checkpoint: {INIT_CHECKPOINT_PATH}")
+    print(f"Local-files-only model loading: {LOCAL_FILES_ONLY}")
     
     # Load data
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
     ds = stratified_split_70_10_20(df)
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(INIT_CHECKPOINT_PATH, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     def enc(b):
         return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=BASELINE_CONFIG["max_length"])
     
@@ -489,8 +539,8 @@ def main():
     
     if reference_result:
         reference_acc = reference_result["test_accuracy"]
-        print(f"\nReference ({REFERENCE_EXPERIMENT_NAME}) Accuracy: {reference_acc:.4f}")
-        print(f"\nImpact vs Reference:")
+        print(f"\nAblation-study reference ({REFERENCE_EXPERIMENT_NAME}) Accuracy: {reference_acc:.4f}")
+        print(f"\nImpact vs ablation-study reference:")
         for r in results:
             if r["experiment"] != reference_result["experiment"]:
                 diff = r["test_accuracy"] - reference_acc
@@ -508,6 +558,7 @@ def main():
     metadata = {
         "seed": SEED,
         "split_protocol": SPLIT_PROTOCOL,
+        "init_checkpoint": INIT_CHECKPOINT_PATH,
         "reference_checkpoint": REFERENCE_CHECKPOINT,
         "reference_experiment": REFERENCE_EXPERIMENT_NAME,
     }
@@ -520,4 +571,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

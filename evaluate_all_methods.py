@@ -14,18 +14,39 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 # Configuration
 SEED = 42
-CSV_3CLS = "outcome_3cls.csv"
+CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
+CANONICAL_RESULTS_PATH = os.getenv("OUTCOME_EVALUATION_RESULTS_PATH", "results/evaluation_results.json")
 
 # Model path conventions:
-# - Tuned 4-block reference model: single checkpoint used for all
-#   fine-tuned/LLM/hybrid comparisons in this script.
-TUNED_4BLOCK_MODEL_PATH = "./results/outputs_hparam_search/lr3e-05_wu0.06_uf4_rd1.0/best_model"
+# - Primary reference checkpoint: validation-selected Bioformer-8L sweep winner
+#   used for the main paper evaluation.
+TUNED_4BLOCK_MODEL_PATH = os.getenv(
+    "OUTCOME_REFERENCE_CHECKPOINT",
+    "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
+)
+LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
+PRIMARY_REFERENCE_RUN = {
+    "artifact_id": "table1_primary_reference_bioformer8l",
+    "run_family": "primary_evaluation",
+    "paper_role": "Primary Bioformer-8L reference checkpoint selected by validation macro F1 in the reduced sweep",
+    "nominal_hparams": {
+        "learning_rate": 3e-5,
+        "warmup_ratio": 0.04,
+        "unfreeze_blocks": 8,
+        "rdrop_alpha": 1.0,
+    },
+    "provenance_note": (
+        "This is the validation-selected primary reference checkpoint used for the main evaluation. "
+        "It was chosen by validation macro F1 within the reduced 16-run sweep and then evaluated once "
+        "on the held-out test set."
+    ),
+}
 MODEL_NAME = "bioformers/bioformer-8L"
 MAX_LENGTH = 128  # Match finetune_high_accuracy.py
 
@@ -178,7 +199,8 @@ def load_and_clean(csv_path: str, keep_duplicates: bool = False, save_report: bo
 def stratified_split_70_10_20(df: pd.DataFrame) -> DatasetDict:
     train_idx, val_idx, test_idx = [], [], []
     for _, grp in df.groupby(LABEL3):
-        idx = grp.index.to_numpy()
+        # Ensure indices are writable for in-place shuffling across NumPy/Pandas versions.
+        idx = grp.index.to_numpy(copy=True)
         _rng.shuffle(idx)
         n = len(idx)
         n_tr = int(round(0.70 * n))
@@ -278,8 +300,8 @@ class FineTunedModelEvaluator:
     def __init__(self, model_path: str, max_length: int = 128):
         self.device = torch.device("cuda" if torch.cuda.is_available() else 
                                   ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=LOCAL_FILES_ONLY)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=LOCAL_FILES_ONLY)
         self.model.to(self.device)
         self.model.eval()
         self.max_length = max_length
@@ -611,6 +633,9 @@ def main():
     print("=" * 60)
     print("Comprehensive Evaluation: All Methods")
     print("=" * 60)
+    print(f"Dataset CSV: {CSV_3CLS}")
+    print(f"Reference checkpoint: {TUNED_4BLOCK_MODEL_PATH}")
+    print(f"Local-files-only model loading: {LOCAL_FILES_ONLY}")
     
     # Load test data
     print("\n[1/5] Loading test data...")
@@ -629,11 +654,16 @@ def main():
         ft_time = time.time() - start_time
         
         results_ft = evaluate_method(
-            labels, preds_ft, "Fine-Tuned Bioformer-8L (Tuned 4-block reference)"
+            labels, preds_ft, "Fine-Tuned Bioformer-8L (validation-selected primary checkpoint)"
         )
         results_ft["inference_time"] = ft_time
         results_ft["time_per_sample"] = ft_time / len(texts)
         results_ft["model_path"] = TUNED_4BLOCK_MODEL_PATH
+        results_ft["artifact_id"] = PRIMARY_REFERENCE_RUN["artifact_id"]
+        results_ft["run_family"] = PRIMARY_REFERENCE_RUN["run_family"]
+        results_ft["paper_role"] = PRIMARY_REFERENCE_RUN["paper_role"]
+        results_ft["nominal_hparams"] = PRIMARY_REFERENCE_RUN["nominal_hparams"]
+        results_ft["provenance_note"] = PRIMARY_REFERENCE_RUN["provenance_note"]
         all_results.append(results_ft)
         print(f"  Accuracy: {results_ft['accuracy']:.4f}")
         print(f"  Macro F1: {results_ft['macro_f1']:.4f}")
@@ -642,7 +672,7 @@ def main():
         # Validation check: warn if accuracy is suspiciously low
         if results_ft['accuracy'] < 0.85: # Lowered threshold to be more realistic
             print(f"\n  ⚠️  WARNING: Accuracy ({results_ft['accuracy']:.4f}) is lower than expected.")
-            print(f"  ⚠️  Expected accuracy for this tuned 4-block reference is ~90.07%.")
+            print(f"  ⚠️  Expected accuracy for this validation-selected primary checkpoint is ~91.54%.")
             print(f"  ⚠️  This may indicate:")
             print(f"      - A mismatch in test data (wrong split or preprocessing).")
             print(f"      - The wrong model checkpoint is being loaded.")
@@ -718,6 +748,9 @@ def main():
     
     with open(output_file, "w") as f:
         json.dump(serializable_results, f, indent=2)
+    os.makedirs(os.path.dirname(CANONICAL_RESULTS_PATH) or ".", exist_ok=True)
+    with open(CANONICAL_RESULTS_PATH, "w") as f:
+        json.dump(serializable_results, f, indent=2)
     
     # Print summary
     print("\n" + "=" * 60)
@@ -734,15 +767,17 @@ def main():
             print(f"  Model: {result['model_path']}")
     
     print(f"\nResults saved to: {output_file}")
+    print(f"Canonical results saved to: {CANONICAL_RESULTS_PATH}")
     
     # Final validation summary
     print("\n" + "=" * 60)
     print("VALIDATION NOTES")
     print("=" * 60)
     print("Expected results (from authoritative artifacts):")
-    print("  - Fine-tuned Bioformer-8L (tuned 4-block reference): ~90.07% accuracy")
-    print("  - LLM API (GPT-5.2, improved prompt): ~50.23% accuracy")
-    print("  - Hybrid (confidence < 0.7): ~89.03% accuracy")
+    print("  - Primary evaluation reference checkpoint (Bioformer-8L, 8 blocks, lr=3e-5, warmup=0.04, R-Drop=1.0): ~91.54% accuracy")
+    print("    Note: this is the validation-selected checkpoint for the main paper.")
+    print("  - LLM API (GPT-5.2, improved prompt): ~57.27% accuracy")
+    print("  - Hybrid (confidence < 0.7): ~89.50% accuracy")
     print("\nIf fine-tuned model accuracy is significantly different:")
     print("  1. Check that the correct model checkpoint is loaded (see TUNED_4BLOCK_MODEL_PATH).")
     print("  2. Verify test data preprocessing matches the canonical training split (seed=42).")
@@ -755,4 +790,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
