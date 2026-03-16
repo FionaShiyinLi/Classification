@@ -739,11 +739,12 @@ def main():
         results.append(result)
 
         print(
+            f"Validation accuracy: {result.val_accuracy:.4f} | "
             f"Validation macro F1: {result.val_macro_f1:.4f} | "
             f"Test macro F1: {result.test_macro_f1:.4f}"
         )
 
-        if best_result is None or result.val_macro_f1 > best_result.val_macro_f1:
+        if best_result is None or (result.val_accuracy, result.val_macro_f1) > (best_result.val_accuracy, best_result.val_macro_f1):
             best_result = result
 
     summary_path = OUTPUT_ROOT / "search_results.json"
@@ -763,12 +764,12 @@ def main():
             "run_family": "hyperparameter_search",
             "paper_role": (
                 "Single run from the hyperparameter search grid; reported for sweep comparison, "
-                "not the fixed main-paper reference checkpoint."
+                "with the top run selected by validation accuracy."
             ),
             "provenance_note": (
-                "This result comes from the hyperparameter-search workflow. Even if its nominal "
-                "hyperparameters match the main reference checkpoint, it should be interpreted as "
-                "a distinct run artifact."
+                "This result comes from the hyperparameter-search workflow. The primary Bioformer "
+                "checkpoint is selected by highest validation accuracy, with validation macro F1 "
+                "used as the tie-breaker."
             ),
             "is_primary_reference": False,
         }
@@ -776,7 +777,7 @@ def main():
     ]
     summary_data = sorted(
         search_summary_rows,
-        key=lambda row: (-row["val_macro_f1"], -row["test_macro_f1"], -row["test_accuracy"]),
+        key=lambda row: (-row["val_accuracy"], -row["val_macro_f1"], -row["test_accuracy"], -row["test_macro_f1"]),
     )
 
     with summary_path.open("w", encoding="utf-8") as f:
@@ -790,10 +791,11 @@ def main():
         print("No successful runs recorded.")
         return
 
-    print("\nBest configuration (by validation macro F1):")
+    print("\nBest configuration (by validation accuracy):")
     print(json.dumps(
         {
             **asdict(best_result.config),
+            "val_accuracy": best_result.val_accuracy,
             "val_macro_f1": best_result.val_macro_f1,
             "test_macro_f1": best_result.test_macro_f1,
             "output_dir": best_result.output_dir,
