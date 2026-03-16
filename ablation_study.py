@@ -20,19 +20,20 @@ TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 MODEL_NAME = "bioformers/bioformer-8L"
-INIT_CHECKPOINT_PATH = os.getenv(
+PRIMARY_CHECKPOINT_PATH = os.getenv(
     "OUTCOME_REFERENCE_CHECKPOINT",
     "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
 )
+INIT_MODEL_SOURCE = os.getenv("OUTCOME_ABLATION_INIT_MODEL", MODEL_NAME)
 LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 
 OUTPUT_DIR = "./outputs_ablation"
 RESULTS_DIR = "./results"
-REFERENCE_CHECKPOINT = INIT_CHECKPOINT_PATH
+REFERENCE_CHECKPOINT = PRIMARY_CHECKPOINT_PATH
 SPLIT_PROTOCOL = "canonical_split_A_seed42_70_10_20"
-REFERENCE_EXPERIMENT_NAME = "Ablation reference: R-Drop + Class Weights + 2 Blocks"
+REFERENCE_EXPERIMENT_NAME = "Primary Reference (R-Drop + Class Weights + 8 Blocks)"
 
 # Baseline config
 BASELINE_CONFIG = {
@@ -41,13 +42,13 @@ BASELINE_CONFIG = {
     "lr": 3e-5,
     "batch_size": 16,
     "grad_accum": 1,
-    "warmup_r": 0.06,
+    "warmup_r": 0.04,
     "weight_decay": 0.02,
     "label_smooth": 0.0,
     "patience": 2,
     "rdrop_alpha": 1.0,
     "use_class_weights": True,
-    "unfreeze_blocks": 2,
+    "unfreeze_blocks": 8,
 }
 
 _DASHES = "".join(["\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"])
@@ -57,82 +58,90 @@ _rng = np.random.default_rng(SEED)
 # Ablation experiments
 ABLATION_EXPERIMENTS = [
     {
-        "name": "Ablation reference: R-Drop + Class Weights + 2 Blocks",
-        "artifact_id": "table4_ablation_reference_2block",
+        "name": "Primary Reference (R-Drop + Class Weights + 8 Blocks)",
+        "artifact_id": "table4_ablation_primary_reference_8block",
         "run_family": "ablation_retrain",
-        "paper_role": "Reference run within the ablation study only",
+        "paper_role": "Primary-baseline ablation reference run",
         "provenance_note": (
-            "This reference is internal to the ablation study and should not be confused "
-            "with the fixed primary evaluation checkpoint used in the main manuscript."
-        ),
-        "rdrop_alpha": 1.0,
-        "use_class_weights": True,
-        "unfreeze_blocks": 2,
-    },
-    {
-        "name": "No R-Drop",
-        "artifact_id": "table4_ablation_no_rdrop",
-        "run_family": "ablation_retrain",
-        "paper_role": "Ablation retraining run without R-Drop",
-        "provenance_note": (
-            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
-            "and not a hyperparameter-search sweep result."
-        ),
-        "rdrop_alpha": 0.0,
-        "use_class_weights": True,
-        "unfreeze_blocks": 2,
-    },
-    {
-        "name": "No Class Weights",
-        "artifact_id": "table4_ablation_no_class_weights",
-        "run_family": "ablation_retrain",
-        "paper_role": "Ablation retraining run without class weights",
-        "provenance_note": (
-            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
-            "and not a hyperparameter-search sweep result."
-        ),
-        "rdrop_alpha": 1.0,
-        "use_class_weights": False,
-        "unfreeze_blocks": 2,
-    },
-    {
-        "name": "Unfreeze 1 Block",
-        "artifact_id": "table4_ablation_unfreeze1",
-        "run_family": "ablation_retrain",
-        "paper_role": "Ablation retraining run testing one unfrozen block",
-        "provenance_note": (
-            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
-            "and not a hyperparameter-search sweep result."
-        ),
-        "rdrop_alpha": 1.0,
-        "use_class_weights": True,
-        "unfreeze_blocks": 1,
-    },
-    {
-        "name": "Unfreeze 8 Blocks",
-        "artifact_id": "table4_ablation_unfreeze8",
-        "run_family": "ablation_retrain",
-        "paper_role": "Ablation retraining run testing eight unfrozen blocks",
-        "provenance_note": (
-            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
-            "and not a hyperparameter-search sweep result."
+            "This run retrains the validation-selected primary Bioformer recipe from the base "
+            "Bioformer checkpoint on the canonical split so that ablation differences can be "
+            "interpreted relative to the same primary training pipeline."
         ),
         "rdrop_alpha": 1.0,
         "use_class_weights": True,
         "unfreeze_blocks": 8,
     },
     {
+        "name": "No R-Drop",
+        "artifact_id": "table4_ablation_no_rdrop",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run without R-Drop relative to the primary baseline",
+        "provenance_note": (
+            "This run changes only the R-Drop component relative to the primary baseline retraining recipe."
+        ),
+        "rdrop_alpha": 0.0,
+        "use_class_weights": True,
+        "unfreeze_blocks": 8,
+    },
+    {
+        "name": "No Class Weights",
+        "artifact_id": "table4_ablation_no_class_weights",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run without class weights relative to the primary baseline",
+        "provenance_note": (
+            "This run changes only class weighting relative to the primary baseline retraining recipe."
+        ),
+        "rdrop_alpha": 1.0,
+        "use_class_weights": False,
+        "unfreeze_blocks": 8,
+    },
+    {
+        "name": "Unfreeze 4 Blocks",
+        "artifact_id": "table4_ablation_unfreeze4",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run testing four unfrozen blocks relative to the primary baseline",
+        "provenance_note": (
+            "This run changes only the unfreezing depth relative to the primary baseline retraining recipe."
+        ),
+        "rdrop_alpha": 1.0,
+        "use_class_weights": True,
+        "unfreeze_blocks": 4,
+    },
+    {
+        "name": "Unfreeze 2 Blocks",
+        "artifact_id": "table4_ablation_unfreeze2",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run testing two unfrozen blocks relative to the primary baseline",
+        "provenance_note": (
+            "This run changes only the unfreezing depth relative to the primary baseline retraining recipe."
+        ),
+        "rdrop_alpha": 1.0,
+        "use_class_weights": True,
+        "unfreeze_blocks": 2,
+    },
+    {
+        "name": "Unfreeze 1 Block",
+        "artifact_id": "table4_ablation_unfreeze1",
+        "run_family": "ablation_retrain",
+        "paper_role": "Ablation retraining run testing one unfrozen block relative to the primary baseline",
+        "provenance_note": (
+            "This run changes only the unfreezing depth relative to the primary baseline retraining recipe."
+        ),
+        "rdrop_alpha": 1.0,
+        "use_class_weights": True,
+        "unfreeze_blocks": 1,
+    },
+    {
         "name": "No R-Drop + No Class Weights",
         "artifact_id": "table4_ablation_no_rdrop_no_weights",
         "run_family": "ablation_retrain",
-        "paper_role": "Ablation retraining run without R-Drop and class weights",
+        "paper_role": "Ablation retraining run without R-Drop and class weights relative to the primary baseline",
         "provenance_note": (
-            "This is an ablation retraining run, not the fixed primary evaluation checkpoint "
-            "and not a hyperparameter-search sweep result."
+            "This run changes both regularization and class weighting relative to the primary baseline retraining recipe."
         ),
         "rdrop_alpha": 0.0,
         "use_class_weights": False,
-        "unfreeze_blocks": 2,
+        "unfreeze_blocks": 8,
     },
 ]
 
@@ -419,13 +428,13 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
     print(f"Experiment: {config['name']}")
     print(f"{'='*60}")
     
-    tokenizer = AutoTokenizer.from_pretrained(INIT_CHECKPOINT_PATH, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(INIT_MODEL_SOURCE, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    model_config = AutoConfig.from_pretrained(INIT_CHECKPOINT_PATH, num_labels=NUM_LABELS,
+    model_config = AutoConfig.from_pretrained(INIT_MODEL_SOURCE, num_labels=NUM_LABELS,
                                              id2label=ID2LABEL, label2id=LABEL2ID, local_files_only=LOCAL_FILES_ONLY)
     model = AutoModelForSequenceClassification.from_pretrained(
-        INIT_CHECKPOINT_PATH, config=model_config, local_files_only=LOCAL_FILES_ONLY
+        INIT_MODEL_SOURCE, config=model_config, local_files_only=LOCAL_FILES_ONLY
     )
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=config["unfreeze_blocks"])
@@ -489,7 +498,7 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
     return {
         "experiment": config["name"],
         "config": config,
-        "init_checkpoint": INIT_CHECKPOINT_PATH,
+        "init_checkpoint": INIT_MODEL_SOURCE,
         "artifact_id": config["artifact_id"],
         "run_family": config["run_family"],
         "paper_role": config["paper_role"],
@@ -504,15 +513,15 @@ def main():
     set_seed(SEED)
     print(f"Using split protocol: {SPLIT_PROTOCOL}")
     print(f"Dataset CSV: {CSV_3CLS}")
-    print(f"Reference checkpoint: {REFERENCE_CHECKPOINT}")
-    print(f"Initialization checkpoint: {INIT_CHECKPOINT_PATH}")
+    print(f"Primary checkpoint (for paper reference): {REFERENCE_CHECKPOINT}")
+    print(f"Initialization source for ablation reruns: {INIT_MODEL_SOURCE}")
     print(f"Local-files-only model loading: {LOCAL_FILES_ONLY}")
     
     # Load data
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
     ds = stratified_split_70_10_20(df)
     
-    tokenizer = AutoTokenizer.from_pretrained(INIT_CHECKPOINT_PATH, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(INIT_MODEL_SOURCE, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
     def enc(b):
         return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=BASELINE_CONFIG["max_length"])
     
@@ -539,8 +548,8 @@ def main():
     
     if reference_result:
         reference_acc = reference_result["test_accuracy"]
-        print(f"\nAblation-study reference ({REFERENCE_EXPERIMENT_NAME}) Accuracy: {reference_acc:.4f}")
-        print(f"\nImpact vs ablation-study reference:")
+        print(f"\nPrimary-baseline ablation reference ({REFERENCE_EXPERIMENT_NAME}) Accuracy: {reference_acc:.4f}")
+        print(f"\nImpact vs primary-baseline ablation reference:")
         for r in results:
             if r["experiment"] != reference_result["experiment"]:
                 diff = r["test_accuracy"] - reference_acc
@@ -558,7 +567,7 @@ def main():
     metadata = {
         "seed": SEED,
         "split_protocol": SPLIT_PROTOCOL,
-        "init_checkpoint": INIT_CHECKPOINT_PATH,
+        "init_checkpoint": INIT_MODEL_SOURCE,
         "reference_checkpoint": REFERENCE_CHECKPOINT,
         "reference_experiment": REFERENCE_EXPERIMENT_NAME,
     }
