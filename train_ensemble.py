@@ -1,6 +1,6 @@
 # filename: train_ensemble.py
-# Train multiple models with different seeds for ensemble
-# Updated to use the validation-selected primary schedule (lr=3e-5, warmup=0.04, 8 unfrozen blocks, R-Drop α=1.0)
+# Train multiple models with different seeds for an ensemble benchmark
+# aligned to the exact primary-training pipeline.
 
 import os, json, re
 import numpy as np
@@ -19,9 +19,10 @@ LABEL3 = "outcome.class"
 NUM_LABELS = 3
 MODEL_NAME = "bioformers/bioformer-8L"
 LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
-OUTPUT_DIR = "./outputs_ensemble"
+OUTPUT_DIR = os.getenv("OUTCOME_ENSEMBLE_OUTPUT_DIR", "./outputs_ensemble_aligned_primary")
 DATA_PREP_OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
 RESULTS_DIR = "./results"
+RESULTS_JSON = os.getenv("OUTCOME_ENSEMBLE_RESULTS_PATH", os.path.join(RESULTS_DIR, "ensemble_results_aligned_primary.json"))
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 
 # Hyperparameters matched to the validation-selected primary Bioformer checkpoint
@@ -364,9 +365,11 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     common_kwargs = dict(
         output_dir=os.path.join(OUTPUT_DIR, f"model_seed_{seed}"),
         overwrite_output_dir=True,
-        save_strategy="epoch", load_best_model_at_end=True,
+        save_strategy="epoch",
+        save_total_limit=1,
+        load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
-        learning_rate=LR, lr_scheduler_type="cosine",
+        learning_rate=LR,
         per_device_train_batch_size=BATCH_SIZE, per_device_eval_batch_size=BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACCUM, num_train_epochs=EPOCHS,
         weight_decay=WEIGHT_DECAY, warmup_ratio=WARMUP_R,
@@ -400,6 +403,9 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     
     trainer.train()
     
+    train_metrics = trainer.evaluate(train_tok)
+    val_metrics = trainer.evaluate(val_tok)
+
     # Evaluate on test set
     test_metrics = trainer.evaluate(test_tok)
     preds = trainer.predict(test_tok)
@@ -412,6 +418,10 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     
     return {
         "seed": seed,
+        "train_accuracy": float(train_metrics.get("eval_accuracy", 0)),
+        "train_macro_f1": float(train_metrics.get("eval_macro_f1", 0)),
+        "val_accuracy": float(val_metrics.get("eval_accuracy", 0)),
+        "val_macro_f1": float(val_metrics.get("eval_macro_f1", 0)),
         "test_accuracy": test_metrics.get("eval_accuracy", 0),
         "test_macro_f1": test_metrics.get("eval_macro_f1", 0),
         "model_path": model_dir,
@@ -457,6 +467,15 @@ def main():
     device, device_type = check_gpu_availability()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    print("=" * 60)
+    print("ALIGNED PRIMARY-PIPELINE ENSEMBLE")
+    print("=" * 60)
+    print(f"Dataset CSV: {CSV_3CLS}")
+    print(f"Output dir: {OUTPUT_DIR}")
+    print(f"Results JSON: {RESULTS_JSON}")
+    print(f"Seeds: {SEED_LIST}")
+    print("Training recipe: lr=3e-5, warmup=0.04, 8 unfrozen blocks, R-Drop=1.0,")
+    print("  inverse-frequency class weights, exact primary pipeline scheduler settings")
     
     # Load and prepare data (same for all models)
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
@@ -525,12 +544,11 @@ def main():
     with open(output_path, "w") as f:
         json.dump(ensemble_results, f, indent=2)
 
-    flat_output_path = os.path.join(RESULTS_DIR, "ensemble_results.json")
-    with open(flat_output_path, "w") as f:
+    with open(RESULTS_JSON, "w") as f:
         json.dump(ensemble_results, f, indent=2)
 
     print(f"\nResults saved to: {output_path}")
-    print(f"Flat results saved to: {flat_output_path}")
+    print(f"Flat results saved to: {RESULTS_JSON}")
 
 if __name__ == "__main__":
     main()
