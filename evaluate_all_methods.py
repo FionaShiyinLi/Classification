@@ -722,7 +722,7 @@ def main():
     
     # Save results
     print("\n[5/5] Saving results...")
-    output_file = "evaluation_results.json"
+    output_file = CANONICAL_RESULTS_PATH
     
     # Convert numpy types to native Python types for JSON serialization
     def convert_to_serializable(obj):
@@ -746,10 +746,8 @@ def main():
     
     serializable_results = convert_to_serializable(all_results)
     
+    os.makedirs(os.path.dirname(output_file) or ".", exist_ok=True)
     with open(output_file, "w") as f:
-        json.dump(serializable_results, f, indent=2)
-    os.makedirs(os.path.dirname(CANONICAL_RESULTS_PATH) or ".", exist_ok=True)
-    with open(CANONICAL_RESULTS_PATH, "w") as f:
         json.dump(serializable_results, f, indent=2)
     
     # Print summary
@@ -767,26 +765,25 @@ def main():
             print(f"  Model: {result['model_path']}")
     
     print(f"\nResults saved to: {output_file}")
-    print(f"Canonical results saved to: {CANONICAL_RESULTS_PATH}")
     
     # Final validation summary
     print("\n" + "=" * 60)
     print("VALIDATION NOTES")
     print("=" * 60)
-    print("Expected results (from authoritative artifacts):")
+    print("Expected results (current local artifacts):")
     print("  - Primary evaluation reference checkpoint (Bioformer-8L, 8 blocks, lr=3e-5, warmup=0.04, R-Drop=1.0): ~91.54% accuracy")
     print("    Note: this is the validation-selected checkpoint for the main paper.")
-    print("  - LLM API (GPT-5.2, improved prompt): ~57.27% accuracy")
-    print("  - Hybrid (confidence < 0.7): ~89.50% accuracy")
+    print("  - LLM API (GPT-5.2, improved prompt): ~59.29% accuracy")
+    print("  - Hybrid (confidence < 0.7): ~91.23% accuracy")
     print("\nIf fine-tuned model accuracy is significantly different:")
     print("  1. Check that the correct model checkpoint is loaded (see TUNED_4BLOCK_MODEL_PATH).")
     print("  2. Verify test data preprocessing matches the canonical training split (seed=42).")
-    print("  3. Ensure 'test_predictions.csv' is not being loaded from an incorrect directory.")
+    print("  3. Ensure predictions are being read from the intended checkpoint directory.")
     print("\nAuthoritative result files for verification:")
-    print("  - evaluation_results.json (canonical results for all methods)")
-    print("  - results/outputs_hparam_search/search_results.json (hyperparameter search results)")
-    print("  - outputs_ablation/ablation_results.json (ablation study results)")
-    print("  - outputs_model_comparison/model_comparison_results.json (cross-model results)")
+    print(f"  - {CANONICAL_RESULTS_PATH} (canonical results for all methods)")
+    print("  - results/search_results.json (hyperparameter search results)")
+    print("  - results/ablation_results.json (ablation study results)")
+    print("  - results/model_comparison_results.json (cross-model results)")
 
 if __name__ == "__main__":
     main()
