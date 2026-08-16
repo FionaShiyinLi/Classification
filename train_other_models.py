@@ -14,9 +14,23 @@ from transformers import (
 from sklearn.metrics import accuracy_score, f1_score
 from datasets import Dataset, DatasetDict, Value
 
+from project_config import (
+    ADAM_BETA1,
+    ADAM_BETA2,
+    ADAM_EPSILON,
+    COMPARATOR_SCHEDULER,
+    MAX_GRAD_NORM,
+    MODEL_REVISIONS,
+    OPTIMIZER_NAME,
+    REPO_ROOT,
+)
+
 # Configuration
 SEED = 42
-CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
+CSV_3CLS = os.getenv(
+    "OUTCOME_DATASET_CSV",
+    str(REPO_ROOT / "restricted_data" / "outcome_3cls.csv"),
+)
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
@@ -49,8 +63,14 @@ PATIENCE = 2
 RDROP_ALPHA = 1.0
 UNFREEZE_BLOCKS = 8
 
-OUTPUT_DIR = "./outputs_model_comparison"
-RESULTS_DIR = "./results"
+OUTPUT_DIR = os.getenv(
+    "OUTCOME_MODEL_COMPARISON_OUTPUT_DIR",
+    str(REPO_ROOT / "private_outputs" / "model_comparison" / "training"),
+)
+RESULTS_DIR = os.getenv(
+    "OUTCOME_MODEL_COMPARISON_RESULTS_DIR",
+    str(REPO_ROOT / "private_outputs" / "model_comparison"),
+)
 
 _DASHES = "".join(["\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"])
 _DASH_RE = re.compile(f"[{_DASHES}]")
@@ -339,7 +359,10 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     
     try:
         tokenizer = AutoTokenizer.from_pretrained(
-            model_name, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+            model_name,
+            use_fast=True,
+            revision=MODEL_REVISIONS.get(model_name),
+            local_files_only=LOCAL_FILES_ONLY,
         )
     except:
         print(f"  ⚠️  Skipping {model_name} - tokenizer not available")
@@ -348,10 +371,19 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
     try:
-        config = AutoConfig.from_pretrained(model_name, num_labels=NUM_LABELS, 
-                                           id2label=ID2LABEL, label2id=LABEL2ID, local_files_only=LOCAL_FILES_ONLY)
+        config = AutoConfig.from_pretrained(
+            model_name,
+            num_labels=NUM_LABELS,
+            id2label=ID2LABEL,
+            label2id=LABEL2ID,
+            revision=MODEL_REVISIONS.get(model_name),
+            local_files_only=LOCAL_FILES_ONLY,
+        )
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, config=config, local_files_only=LOCAL_FILES_ONLY
+            model_name,
+            config=config,
+            revision=MODEL_REVISIONS.get(model_name),
+            local_files_only=LOCAL_FILES_ONLY,
         )
     except Exception as e:
         print(f"  ⚠️  Skipping {model_name} - {e}")
@@ -360,7 +392,7 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=UNFREEZE_BLOCKS)
     
-    use_fp16 = False if device_type == "mps" else True
+    use_fp16 = device_type == "cuda"
     
     y_train = np.array(train_tok["labels"])
     class_weights = torch.tensor(compute_class_weights(y_train, NUM_LABELS), dtype=torch.float32)
@@ -371,16 +403,21 @@ def train_model(model_name: str, train_tok, val_tok, test_tok, device, device_ty
         overwrite_output_dir=True,
         save_strategy="epoch", load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
-        learning_rate=LR, lr_scheduler_type="cosine",
+        learning_rate=LR,
+        lr_scheduler_type=COMPARATOR_SCHEDULER,
+        optim=OPTIMIZER_NAME,
+        adam_beta1=ADAM_BETA1,
+        adam_beta2=ADAM_BETA2,
+        adam_epsilon=ADAM_EPSILON,
         per_device_train_batch_size=BATCH_SIZE, per_device_eval_batch_size=BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACCUM, num_train_epochs=EPOCHS,
         weight_decay=WEIGHT_DECAY, warmup_ratio=WARMUP_R,
         logging_steps=50, seed=SEED, fp16=use_fp16,
-        max_grad_norm=1.0, report_to="none", 
+        max_grad_norm=MAX_GRAD_NORM, report_to="none",
         dataloader_num_workers=0,
         group_by_length=True,
     )
-    
+
     try:
         args = TrainingArguments(evaluation_strategy="epoch", **common_kwargs)
     except TypeError:
@@ -498,7 +535,10 @@ def main():
     for model_name in ([] if SKIP_COMPARATOR_TRAINING else MODELS_TO_TEST):
         try:
             tokenizer = AutoTokenizer.from_pretrained(
-                model_name, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+                model_name,
+                use_fast=True,
+                revision=MODEL_REVISIONS.get(model_name),
+                local_files_only=LOCAL_FILES_ONLY,
             )
             def enc(b): 
                 return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=MAX_LENGTH)

@@ -1,0 +1,50 @@
+{
+  "analysis": "cluster-aware GPT prompt-sensitivity comparison",
+  "test_outcomes_n": 4503,
+  "test_reviews_n": 2090,
+  "bootstrap_unit": "Cochrane review (CDSR.id)",
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 43,
+  "paired_resamples": true,
+  "differences": {
+    "18_examples_minus_10_examples": {
+      "accuracy": {
+        "point_difference": 0.00155451920941585,
+        "paired_cluster_bootstrap_95_ci": [
+          -0.003522813170424052,
+          0.006705782794240145
+        ]
+      },
+      "macro_f1": {
+        "point_difference": 0.0017512864953145302,
+        "paired_cluster_bootstrap_95_ci": [
+          -0.004552817455201302,
+          0.008233771841963668
+        ]
+      }
+    },
+    "Bioformer_minus_10_examples": {
+      "accuracy": {
+        "point_difference": 0.12924716855429708,
+        "paired_cluster_bootstrap_95_ci": [
+          0.11493698837624881,
+          0.14404823058181837
+        ]
+      },
+      "macro_f1": {
+        "point_difference": 0.11304507597088731,
+        "paired_cluster_bootstrap_95_ci": [
+          0.09756454971547926,
+          0.1290187439134799
+        ]
+      }
+    }
+  },
+  "mcnemar_10_vs_18": {
+    "ten_only_correct": 65,
+    "eighteen_only_correct": 72,
+    "discordant_n": 137,
+    "exact_two_sided_p": 0.608384106899959
+  },
+  "outputs_contain_source_text": false
+}

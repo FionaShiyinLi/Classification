@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+import unittest
+from pathlib import Path
+
+from project_config import MODEL_REVISIONS
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+class PublicArtifactTests(unittest.TestCase):
+    def test_results_manifest_matches_public_artifacts(self):
+        manifest = json.loads(
+            (REPO_ROOT / "results/manifest.json").read_text(encoding="utf-8")
+        )
+        artifacts = manifest["artifacts"]
+        self.assertEqual(manifest["artifact_count"], len(artifacts))
+        for artifact in artifacts:
+            path = REPO_ROOT / artifact["path"]
+            self.assertTrue(path.is_file(), artifact["path"])
+            self.assertEqual(path.stat().st_size, artifact["bytes"])
+            self.assertEqual(
+                hashlib.sha256(path.read_bytes()).hexdigest(),
+                artifact["sha256"],
+                artifact["path"],
+            )
+
+    def test_public_dataset_is_only_a_small_schema_sample(self):
+        with (REPO_ROOT / "outcome_3cls.csv").open(
+            newline="", encoding="utf-8-sig"
+        ) as handle:
+            rows = list(csv.reader(handle))
+        self.assertLessEqual(len(rows) - 1, 500)
+        self.assertTrue(
+            {"CDSR.id", "outcome.id", "outcome", "outcome.class"}.issubset(
+                set(rows[0])
+            )
+        )
+
+    def test_model_revision_manifest_matches_python_config(self):
+        manifest = json.loads(
+            (REPO_ROOT / "config/model_revisions.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest, MODEL_REVISIONS)
+
+    def test_subgroup_mapping_is_complete(self):
+        payload = json.loads(
+            (REPO_ROOT / "config/subgroup_mapping.json").read_text(encoding="utf-8")
+        )
+        rows = payload["subgroups"]
+        self.assertEqual([row["code"] for row in rows], list(range(1, 17)))
+        self.assertEqual(rows[0]["mapped_label_id"], 0)
+        self.assertTrue(
+            all(row["mapped_label_id"] == 1 for row in rows[1:7])
+        )
+        self.assertTrue(
+            all(row["mapped_label_id"] == 2 for row in rows[7:])
+        )
+
+    def test_reviewer_agreement_matches_manuscript(self):
+        result = json.loads(
+            (
+                REPO_ROOT
+                / "results/analyses/reviewer_agreement/reviewer_agreement.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(result["double_coded_subset_n"], 948)
+        self.assertAlmostEqual(result["subgroup_kappa"], 0.9338108507415235)
+        self.assertAlmostEqual(
+            result["mapped_three_class_kappa"], 0.9417449569255858
+        )
+
+    def test_primary_checkpoint_metrics_match_full_test_set(self):
+        result = json.loads(
+            (REPO_ROOT / "results/primary_checkpoint_metrics.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(result["n_test_samples"], 4503)
+        self.assertAlmostEqual(result["accuracy"], 4122 / 4503)
+        self.assertAlmostEqual(result["macro_f1"], 0.9151846159003062)
+
+    def test_subgroup_totals_match_primary_checkpoint(self):
+        result = json.loads(
+            (
+                REPO_ROOT
+                / "results/analyses/subgroup_performance/subgroup_performance.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(result["test_outcomes_n"], 4503)
+        self.assertEqual(result["correct_n"], 4122)
+        self.assertEqual(
+            result["prediction_counts"],
+            {"Objective": 340, "Semi-objective": 1973, "Subjective": 2190},
+        )
+
+    def test_locked_hybrid_threshold_is_current(self):
+        result = json.loads(
+            (
+                REPO_ROOT
+                / "results/analyses/hybrid_threshold/locked_test_results.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(result["selected_threshold"], 0.55)
+
+    def test_gpt_cluster_comparison_matches_reported_difference(self):
+        result = json.loads(
+            (
+                REPO_ROOT
+                / "results/analyses/gpt_prompt_sensitivity/"
+                "gpt_prompt_sensitivity_cluster_analysis.json"
+            ).read_text(encoding="utf-8")
+        )
+        comparison = result["differences"]["18_examples_minus_10_examples"]
+        self.assertAlmostEqual(
+            comparison["accuracy"]["point_difference"], 7 / 4503
+        )
+        self.assertAlmostEqual(
+            result["mcnemar_10_vs_18"]["exact_two_sided_p"],
+            0.608384106899959,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

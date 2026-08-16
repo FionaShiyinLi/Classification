@@ -1,0 +1,204 @@
+{
+  "created_utc": "2026-08-04T06:42:26.598068+00:00",
+  "analysis": "review-level holdout validation",
+  "interpretation": "Group-disjoint internal validation on unseen Cochrane reviews; not validation on an independent external data source",
+  "source_data": "outcome_3cls.csv",
+  "base_model": "bioformers/bioformer-8L",
+  "initialization": "fresh base pretrained model; manuscript checkpoint was not used",
+  "device": "mps",
+  "seed": 42,
+  "hyperparameters": {
+    "max_length": 128,
+    "learning_rate": 3e-05,
+    "warmup_ratio": 0.04,
+    "unfreeze_blocks": 8,
+    "rdrop_alpha": 1.0,
+    "weight_decay": 0.02,
+    "batch_size": 16,
+    "gradient_accumulation": 1,
+    "maximum_epochs": 8,
+    "early_stopping_patience": 2,
+    "checkpoint_selection": "validation macro F1",
+    "train_only_class_weights": [
+      2.3119070529937744,
+      0.365267276763916,
+      0.3228258788585663
+    ]
+  },
+  "split_summary": {
+    "cleaning": {
+      "source_rows": 43339,
+      "valid_rows_before_deduplication": 43332,
+      "rows_after_exact_text_label_deduplication": 22518,
+      "exact_text_label_duplicates_removed": 20814,
+      "unique_reviews_after_deduplication": 3617
+    },
+    "split_design": {
+      "method": "10-fold StratifiedGroupKFold; 7 train folds, 1 validation fold, 2 test folds",
+      "seed": 42,
+      "selected_test_folds": [
+        7,
+        8
+      ],
+      "selected_validation_fold": 6,
+      "selection_rule": "Minimize absolute split-size error plus absolute class-proportion error; model predictions are not used",
+      "selection_score": 0.021342425056544212,
+      "review_overlap_counts": {
+        "train_validation": 0,
+        "train_test": 0,
+        "validation_test": 0
+      }
+    },
+    "total_outcomes": 22518,
+    "total_reviews": 3617,
+    "splits": {
+      "train": {
+        "outcomes": 15795,
+        "outcome_percent": 70.14388489208633,
+        "reviews": 2534,
+        "class_counts": {
+          "Objective": 1090,
+          "Semi-objective": 6899,
+          "Subjective": 7806
+        },
+        "class_percent": {
+          "Objective": 6.900918012029123,
+          "Semi-objective": 43.67837923393479,
+          "Subjective": 49.420702754036085
+        }
+      },
+      "validation": {
+        "outcomes": 2294,
+        "outcome_percent": 10.187405631050716,
+        "reviews": 361,
+        "class_counts": {
+          "Objective": 173,
+          "Semi-objective": 990,
+          "Subjective": 1131
+        },
+        "class_percent": {
+          "Objective": 7.541412380122058,
+          "Semi-objective": 43.156059285091544,
+          "Subjective": 49.3025283347864
+        }
+      },
+      "test": {
+        "outcomes": 4429,
+        "outcome_percent": 19.668709476862954,
+        "reviews": 722,
+        "class_counts": {
+          "Objective": 304,
+          "Semi-objective": 1944,
+          "Subjective": 2181
+        },
+        "class_percent": {
+          "Objective": 6.863851885301423,
+          "Semi-objective": 43.89252652969068,
+          "Subjective": 49.2436215850079
+        }
+      }
+    },
+    "cross_split_text_audit": {
+      "test_normalized_text_seen_in_train_any_label": 199,
+      "test_normalized_text_and_label_seen_in_train": 160
+    }
+  },
+  "best_training_checkpoint": "checkpoint-7904",
+  "best_validation_macro_f1": 0.8848610465508405,
+  "validation_metrics": {
+    "eval_loss": 0.366113543510437,
+    "eval_accuracy": 0.8779424585876199,
+    "eval_macro_f1": 0.8848610465508405,
+    "eval_weighted_f1": 0.8780024614761391,
+    "eval_runtime": 4.2754,
+    "eval_samples_per_second": 536.555,
+    "eval_steps_per_second": 33.681,
+    "epoch": 8.0
+  },
+  "test_metrics": {
+    "n_test_outcomes": 4429,
+    "accuracy": 0.8706254233461278,
+    "macro_f1": 0.8789236356111493,
+    "weighted_f1": 0.8706249837846741,
+    "cohen_kappa": 0.7699219736279657,
+    "per_class_f1": {
+      "Objective": 0.9012738853503185,
+      "Semi-objective": 0.8569966743412637,
+      "Subjective": 0.8785003471418653
+    },
+    "confusion_matrix": [
+      [
+        283,
+        14,
+        7
+      ],
+      [
+        34,
+        1675,
+        235
+      ],
+      [
+        7,
+        276,
+        1898
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.8734567901234568,
+        "recall": 0.930921052631579,
+        "f1-score": 0.9012738853503185,
+        "support": 304.0
+      },
+      "Semi-objective": {
+        "precision": 0.8524173027989822,
+        "recall": 0.8616255144032922,
+        "f1-score": 0.8569966743412637,
+        "support": 1944.0
+      },
+      "Subjective": {
+        "precision": 0.8869158878504673,
+        "recall": 0.8702430077945896,
+        "f1-score": 0.8785003471418653,
+        "support": 2181.0
+      },
+      "accuracy": 0.8706254233461278,
+      "macro avg": {
+        "precision": 0.8709299935909688,
+        "recall": 0.8875965249431537,
+        "f1-score": 0.8789236356111493,
+        "support": 4429.0
+      },
+      "weighted avg": {
+        "precision": 0.8708497747212963,
+        "recall": 0.8706254233461278,
+        "f1-score": 0.8706249837846741,
+        "support": 4429.0
+      }
+    },
+    "clustered_bootstrap": {
+      "method": "percentile bootstrap resampling whole held-out reviews",
+      "repetitions": 1000,
+      "seed": 43,
+      "accuracy_95_ci": [
+        0.8535371587433984,
+        0.8885360755266108
+      ],
+      "macro_f1_95_ci": [
+        0.8595894020367297,
+        0.8969882533953111
+      ]
+    }
+  },
+  "item_level_baseline_reference": {
+    "source": "primary_checkpoint_metrics.json",
+    "split": "manuscript item-level test split",
+    "accuracy": 0.9153897401732178,
+    "macro_f1": 0.9151846159003062,
+    "descriptive_accuracy_difference": -0.044764316827090034,
+    "descriptive_macro_f1_difference": -0.03626098028915692,
+    "note": "Descriptive only: the test sets differ and this is not a paired comparison."
+  },
+  "saved_best_model": "best_model",
+  "saved_test_predictions": "review_level_test_predictions.csv"
+}

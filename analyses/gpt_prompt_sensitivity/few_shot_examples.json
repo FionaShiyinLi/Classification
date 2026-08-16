@@ -1,0 +1,15 @@
+{
+  "provenance": "Independently authored from the prespecified codebook; not sampled from validation or test data.",
+  "examples": [
+    {"id": "calibration_000001", "text": "Death from any cause during the full observation period", "label": 0},
+    {"id": "calibration_000002", "text": "Death due to stroke", "label": 1},
+    {"id": "calibration_000003", "text": "Treatment discontinuation because of toxicity", "label": 1},
+    {"id": "calibration_000004", "text": "Serious adverse events", "label": 2},
+    {"id": "calibration_000005", "text": "Hospital readmission", "label": 1},
+    {"id": "calibration_000006", "text": "Serum C-reactive protein concentration", "label": 2},
+    {"id": "calibration_000007", "text": "Need for permanent device implantation", "label": 1},
+    {"id": "calibration_000008", "text": "Pain severity", "label": 2},
+    {"id": "calibration_000009", "text": "Radiographic vertebral fracture", "label": 1},
+    {"id": "calibration_000010", "text": "Depressive symptom score", "label": 2}
+  ]
+}

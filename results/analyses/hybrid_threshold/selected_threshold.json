@@ -1,0 +1,43 @@
+{
+  "created_utc": "2026-08-11T21:28:34.402856+00:00",
+  "selected_threshold": 0.55,
+  "selection_rule": "highest validation hybrid accuracy; tie-break by higher validation macro-F1, then lower routing rate, then lower threshold",
+  "max_routing_rate": null,
+  "candidate_thresholds": [
+    0.0,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95
+  ],
+  "validation_selected_row": {
+    "threshold": 0.55,
+    "coverage": 0.9853463587921847,
+    "routing_rate": 0.014653641207815276,
+    "retained_bioformer_accuracy": 0.9337539432176656,
+    "selective_error": 0.06624605678233442,
+    "routed_bioformer_accuracy": 0.5151515151515151,
+    "routed_llm_accuracy": 0.5151515151515151,
+    "hybrid_accuracy": 0.927619893428064,
+    "hybrid_macro_f1": 0.9278596826881071,
+    "accuracy_delta_vs_bioformer": 0.0,
+    "retained_n": 2219,
+    "routed_n": 33
+  },
+  "validation_n": 2252,
+  "dataset_sha256": "158072395b7c9e17d2083914a3c128e5cc4c3641bdd0e7a66169ea74b7fb3cf7",
+  "checkpoint_signature": {
+    "config_sha256": "b0e41dbc43fc711c5965b821c556f7bcb7ceb3f7af714be5b39c97bb5bf21b2d",
+    "weights_sha256": "f449752b3f0aa2b6eda34b0b231ceba57ca45b5f3c337db6fc27a8f8b6c287ba"
+  },
+  "llm_model": "openai/gpt-5.2",
+  "seed": 42,
+  "routing_rule": "route when maximum softmax probability is strictly below threshold",
+  "threshold_table": "validation_threshold_table.csv"
+}

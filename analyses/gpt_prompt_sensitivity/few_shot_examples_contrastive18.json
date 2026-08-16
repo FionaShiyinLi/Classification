@@ -1,0 +1,25 @@
+{
+  "variant": "contrastive_18_leakage_safe",
+  "provenance": "Independently authored contrastive equivalents of the user-proposed examples. No example is a normalized exact-text match to a canonical validation or test outcome.",
+  "design_note": "The examples emphasize unusual subgroup-to-label boundaries while preserving the held-out evaluation.",
+  "examples": [
+    {"id": "contrastive_000001", "text": "Mortality from any cause over follow-up", "label": 0},
+    {"id": "contrastive_000002", "text": "Overall deaths regardless of cause", "label": 0},
+    {"id": "contrastive_000003", "text": "Delivery before 37 completed weeks of gestation", "label": 1},
+    {"id": "contrastive_000004", "text": "Death attributable to a cardiac cause", "label": 1},
+    {"id": "contrastive_000005", "text": "Unplanned return admission to hospital", "label": 1},
+    {"id": "contrastive_000006", "text": "Requirement for supplemental oxygen support", "label": 1},
+    {"id": "contrastive_000007", "text": "Technical failure of the operative procedure", "label": 1},
+    {"id": "contrastive_000008", "text": "Stopping assigned treatment because of harmful effects", "label": 1},
+    {"id": "contrastive_000009", "text": "Vertebral fracture identified on spinal imaging", "label": 1},
+    {"id": "contrastive_000010", "text": "Peripheral oxygen saturation under the prespecified 95% threshold", "label": 2},
+    {"id": "contrastive_000011", "text": "Participants with one or more serious harmful events", "label": 2},
+    {"id": "contrastive_000012", "text": "Newly diagnosed lower respiratory tract infection", "label": 2},
+    {"id": "contrastive_000013", "text": "Absence of improvement in clinical status", "label": 2},
+    {"id": "contrastive_000014", "text": "Intensity of bodily pain", "label": 2},
+    {"id": "contrastive_000015", "text": "Ability to walk independently", "label": 2},
+    {"id": "contrastive_000016", "text": "Severity of depressive symptomatology", "label": 2},
+    {"id": "contrastive_000017", "text": "Proportion attaining the prespecified glycated haemoglobin goal", "label": 2},
+    {"id": "contrastive_000018", "text": "Satisfaction with the care received", "label": 2}
+  ]
+}

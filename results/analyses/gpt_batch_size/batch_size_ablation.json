@@ -1,0 +1,242 @@
+{
+  "analysis": "GPT-5.2 prompt batch-size sensitivity analysis",
+  "protocol_version": "1.1-baseline-parser-interleaved",
+  "interpretation": "Point estimates compare the same outcomes in one fixed order. Confidence intervals resample Cochrane reviews as clusters. Pairwise comparisons are exploratory and are not multiplicity-adjusted.",
+  "n_test_outcomes": 4503,
+  "n_test_reviews": 2090,
+  "class_counts": {
+    "0": 313,
+    "1": 1967,
+    "2": 2223
+  },
+  "model": "openai/gpt-5.2",
+  "temperature": 0.0,
+  "max_tokens": 2000,
+  "batch_sizes": [
+    10,
+    25,
+    50
+  ],
+  "reference_batch_size": 50,
+  "workers": 8,
+  "requests_interleaved": true,
+  "execution_seed": 45,
+  "current_invocation_wall_seconds": 58.09898591041565,
+  "fixed_random_order": true,
+  "order_seed": 43,
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 44,
+  "baseline_script": "evaluate_all_methods.py",
+  "baseline_script_sha256": "b6faf72e66203798809a56211f949d78dd2628747fd9e50b5c25483f105f0f6b",
+  "test_manifest": "leakage_similarity_test_items.csv",
+  "test_manifest_sha256": "3f6d68b0f22df4482db0e7c9b9c504159fd2d37c159ef9fbcdf5fad560a8163f",
+  "point_results": {
+    "10": {
+      "accuracy": 0.597601598934044,
+      "macro_f1": 0.6310861728689423,
+      "weighted_f1": 0.5552852594295669,
+      "kappa": 0.3166116065461073,
+      "per_class_f1": {
+        "Objective": 0.8054421768707483,
+        "Semi-objective": 0.663553147767607,
+        "Subjective": 0.42426319396847156
+      },
+      "confusion_matrix": [
+        [
+          296,
+          17,
+          0
+        ],
+        [
+          115,
+          1776,
+          76
+        ],
+        [
+          11,
+          1593,
+          619
+        ]
+      ],
+      "accuracy_95_ci": [
+        0.5782079920737735,
+        0.6169970301712034
+      ],
+      "macro_f1_95_ci": [
+        0.6095376445347837,
+        0.6515553776352272
+      ],
+      "request_status_counts": {
+        "ok": 451
+      },
+      "api_fallback_requests": 0,
+      "non_ok_requests": 0,
+      "non_ok_request_rate": 0.0,
+      "fallback_items": 0,
+      "fallback_item_rate": 0.0,
+      "api_fallback_items": 0,
+      "non_ok_items": 0,
+      "prompt_tokens": 444584,
+      "completion_tokens": 118558,
+      "missing_token_usage_requests": 0,
+      "request_latency_seconds_sum": 2270.5040531158447,
+      "returned_model_counts": {
+        "openai/gpt-5.2": 451
+      },
+      "finish_reason_counts": {
+        "stop": 451
+      }
+    },
+    "25": {
+      "accuracy": 0.5978236731068177,
+      "macro_f1": 0.6306279297292495,
+      "weighted_f1": 0.5543186109516705,
+      "kappa": 0.3174266631490066,
+      "per_class_f1": {
+        "Objective": 0.8059701492537313,
+        "Semi-objective": 0.6646795827123696,
+        "Subjective": 0.4212340572216477
+      },
+      "confusion_matrix": [
+        [
+          297,
+          16,
+          0
+        ],
+        [
+          116,
+          1784,
+          67
+        ],
+        [
+          11,
+          1601,
+          611
+        ]
+      ],
+      "accuracy_95_ci": [
+        0.5785305159084151,
+        0.617242370434716
+      ],
+      "macro_f1_95_ci": [
+        0.6094759695466868,
+        0.650655460793614
+      ],
+      "request_status_counts": {
+        "ok": 181
+      },
+      "api_fallback_requests": 0,
+      "non_ok_requests": 0,
+      "non_ok_request_rate": 0.0,
+      "fallback_items": 0,
+      "fallback_item_rate": 0.0,
+      "api_fallback_items": 0,
+      "non_ok_items": 0,
+      "prompt_tokens": 214543,
+      "completion_tokens": 99288,
+      "missing_token_usage_requests": 0,
+      "request_latency_seconds_sum": 1521.91530418396,
+      "returned_model_counts": {
+        "openai/gpt-5.2": 181
+      },
+      "finish_reason_counts": {
+        "stop": 181
+      }
+    },
+    "50": {
+      "accuracy": 0.5978236731068177,
+      "macro_f1": 0.6301783138079441,
+      "weighted_f1": 0.5555552168148337,
+      "kappa": 0.31758522430584746,
+      "per_class_f1": {
+        "Objective": 0.8016194331983806,
+        "Semi-objective": 0.6636754533557674,
+        "Subjective": 0.4252400548696845
+      },
+      "confusion_matrix": [
+        [
+          297,
+          16,
+          0
+        ],
+        [
+          119,
+          1775,
+          73
+        ],
+        [
+          12,
+          1591,
+          620
+        ]
+      ],
+      "accuracy_95_ci": [
+        0.5784443792244752,
+        0.6171415972087614
+      ],
+      "macro_f1_95_ci": [
+        0.608977115114304,
+        0.6503633568961513
+      ],
+      "request_status_counts": {
+        "ok": 91
+      },
+      "api_fallback_requests": 0,
+      "non_ok_requests": 0,
+      "non_ok_request_rate": 0.0,
+      "fallback_items": 0,
+      "fallback_item_rate": 0.0,
+      "api_fallback_items": 0,
+      "non_ok_items": 0,
+      "prompt_tokens": 137863,
+      "completion_tokens": 86723,
+      "missing_token_usage_requests": 0,
+      "request_latency_seconds_sum": 1221.4083700180054,
+      "returned_model_counts": {
+        "openai/gpt-5.2": 91
+      },
+      "finish_reason_counts": {
+        "stop": 91
+      }
+    }
+  },
+  "pairwise_vs_reference": [
+    {
+      "comparison": "batch 10 minus batch 50",
+      "metric": "accuracy",
+      "difference": -0.0002220741727737563,
+      "difference_ci_lower": -0.005694841941994502,
+      "difference_ci_upper": 0.005371964561608022,
+      "prediction_agreement": 0.9624694648012436,
+      "prediction_changes": 169
+    },
+    {
+      "comparison": "batch 10 minus batch 50",
+      "metric": "macro_f1",
+      "difference": 0.0009078590609982173,
+      "difference_ci_lower": -0.004715155794993103,
+      "difference_ci_upper": 0.006812729327098342,
+      "prediction_agreement": 0.9624694648012436,
+      "prediction_changes": 169
+    },
+    {
+      "comparison": "batch 25 minus batch 50",
+      "metric": "accuracy",
+      "difference": 0.0,
+      "difference_ci_lower": -0.005376615618551098,
+      "difference_ci_upper": 0.005477681194410799,
+      "prediction_agreement": 0.9651343548745281,
+      "prediction_changes": 157
+    },
+    {
+      "comparison": "batch 25 minus batch 50",
+      "metric": "macro_f1",
+      "difference": 0.00044961592130543515,
+      "difference_ci_lower": -0.0050475743493055255,
+      "difference_ci_upper": 0.00598638063363629,
+      "prediction_agreement": 0.9651343548745281,
+      "prediction_changes": 157
+    }
+  ],
+  "limitations": "Temperature zero does not guarantee deterministic API output. The original item-level GPT predictions were not saved, so batch 50 is rerun contemporaneously. The fixed shuffled order differs from the class-grouped historical run. Findings apply to this model alias, prompt, dataset, item order, and run date."
+}

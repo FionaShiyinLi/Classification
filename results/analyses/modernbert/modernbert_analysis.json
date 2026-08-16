@@ -1,0 +1,235 @@
+{
+  "design": "ModernBERT-base was fine-tuned on the exact fixed Table 2 split and under the same supervised training protocol as the biomedical encoders.",
+  "model_id": "answerdotai/ModernBERT-base",
+  "n_test_outcomes": 4503,
+  "n_test_reviews": 2090,
+  "point_metrics": {
+    "Bioformer-8L": {
+      "accuracy": 0.9153897401732178,
+      "macro_f1": 0.9151846159003059,
+      "weighted_f1": 0.9154229974842241,
+      "kappa": 0.84978603188701,
+      "Objective_precision": 0.8794117647058823,
+      "Objective_recall": 0.9552715654952076,
+      "Objective_f1": 0.9157733537519142,
+      "Semi-objective_precision": 0.9052204764318297,
+      "Semi-objective_recall": 0.9079816980172852,
+      "Semi-objective_f1": 0.9065989847715735,
+      "Subjective_precision": 0.9301369863013699,
+      "Subjective_recall": 0.9163292847503374,
+      "Subjective_f1": 0.9231815091774302
+    },
+    "PubMedBERT": {
+      "accuracy": 0.9222740395292027,
+      "macro_f1": 0.9248589877064076,
+      "weighted_f1": 0.9222988604560713,
+      "kappa": 0.8616690399855071,
+      "Objective_precision": 0.9166666666666666,
+      "Objective_recall": 0.9488817891373802,
+      "Objective_f1": 0.9324960753532181,
+      "Semi-objective_precision": 0.9092284417549168,
+      "Semi-objective_recall": 0.9166243009659379,
+      "Semi-objective_f1": 0.9129113924050632,
+      "Subjective_precision": 0.9348816029143898,
+      "Subjective_recall": 0.9235267656320288,
+      "Subjective_f1": 0.9291694953609415
+    },
+    "BioBERT": {
+      "accuracy": 0.9207195203197868,
+      "macro_f1": 0.9228132621877174,
+      "weighted_f1": 0.9207848574315717,
+      "kappa": 0.8589185184457097,
+      "Objective_precision": 0.9161490683229814,
+      "Objective_recall": 0.9424920127795527,
+      "Objective_f1": 0.9291338582677167,
+      "Semi-objective_precision": 0.9031452820768847,
+      "Semi-objective_recall": 0.9196746314184037,
+      "Semi-objective_f1": 0.9113350125944586,
+      "Subjective_precision": 0.9375573921028466,
+      "Subjective_recall": 0.918578497525866,
+      "Subjective_f1": 0.927970915700977
+    },
+    "SciBERT": {
+      "accuracy": 0.9173884077281812,
+      "macro_f1": 0.9235162666798287,
+      "weighted_f1": 0.9173403400592053,
+      "kappa": 0.8529027607932479,
+      "Objective_precision": 0.9230769230769231,
+      "Objective_recall": 0.9584664536741214,
+      "Objective_f1": 0.9404388714733544,
+      "Semi-objective_precision": 0.9089048106448311,
+      "Semi-objective_recall": 0.9028978139298424,
+      "Semi-objective_f1": 0.9058913542463657,
+      "Subjective_precision": 0.9240107913669064,
+      "Subjective_recall": 0.9244264507422402,
+      "Subjective_f1": 0.9242185743197662
+    },
+    "ModernBERT-base": {
+      "accuracy": 0.9027315123251166,
+      "macro_f1": 0.9044371982891027,
+      "weighted_f1": 0.9028226425177717,
+      "kappa": 0.8271846749477475,
+      "Objective_precision": 0.8851963746223565,
+      "Objective_recall": 0.9361022364217252,
+      "Objective_f1": 0.9099378881987576,
+      "Semi-objective_precision": 0.8829098156452416,
+      "Semi-objective_recall": 0.9008642602948653,
+      "Semi-objective_f1": 0.8917966784096628,
+      "Subjective_precision": 0.9237875288683602,
+      "Subjective_recall": 0.899685110211426,
+      "Subjective_f1": 0.911577028258888
+    }
+  },
+  "table2_with_uncertainty": [
+    {
+      "model": "Bioformer-8L",
+      "accuracy": 0.9153897401732178,
+      "accuracy_ci_lower": 0.9058345720444235,
+      "accuracy_ci_upper": 0.924868335725735,
+      "macro_f1": 0.9151846159003059,
+      "macro_f1_ci_lower": 0.9018784868709727,
+      "macro_f1_ci_upper": 0.9271016867425258
+    },
+    {
+      "model": "PubMedBERT",
+      "accuracy": 0.9222740395292027,
+      "accuracy_ci_lower": 0.9129468918218778,
+      "accuracy_ci_upper": 0.9310950381629682,
+      "macro_f1": 0.9248589877064076,
+      "macro_f1_ci_lower": 0.9127639027148735,
+      "macro_f1_ci_upper": 0.9357343576448779
+    },
+    {
+      "model": "BioBERT",
+      "accuracy": 0.9207195203197868,
+      "accuracy_ci_lower": 0.9114821341370029,
+      "accuracy_ci_upper": 0.9294776001061267,
+      "macro_f1": 0.9228132621877174,
+      "macro_f1_ci_lower": 0.9105599294340265,
+      "macro_f1_ci_upper": 0.9336948067814941
+    },
+    {
+      "model": "SciBERT",
+      "accuracy": 0.9173884077281812,
+      "accuracy_ci_lower": 0.9076368069588625,
+      "accuracy_ci_upper": 0.9265039191531393,
+      "macro_f1": 0.9235162666798287,
+      "macro_f1_ci_lower": 0.9118111834774705,
+      "macro_f1_ci_upper": 0.9340138100174962
+    },
+    {
+      "model": "ModernBERT-base",
+      "accuracy": 0.9027315123251166,
+      "accuracy_ci_lower": 0.892516047030099,
+      "accuracy_ci_upper": 0.9124087591240876,
+      "macro_f1": 0.9044371982891027,
+      "macro_f1_ci_lower": 0.8910188957016738,
+      "macro_f1_ci_upper": 0.9166421370322192
+    }
+  ],
+  "modernbert_pairwise_tests": [
+    {
+      "comparison": "ModernBERT-base minus Bioformer-8L",
+      "metric": "accuracy",
+      "difference": -0.012658227848101222,
+      "difference_ci_lower": -0.02087111595117786,
+      "difference_ci_upper": -0.004618429733890483,
+      "permutation_p_raw": 0.0026997300269973002,
+      "permutation_seed": 47,
+      "permutation_p_holm": 0.0053994600539946005,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus Bioformer-8L",
+      "metric": "macro_f1",
+      "difference": -0.010747417611203125,
+      "difference_ci_lower": -0.02037553999105043,
+      "difference_ci_upper": -0.0013470165395533318,
+      "permutation_p_raw": 0.023897610238976102,
+      "permutation_seed": 47,
+      "permutation_p_holm": 0.023897610238976102,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus PubMedBERT",
+      "metric": "accuracy",
+      "difference": -0.019542527204086113,
+      "difference_ci_lower": -0.027388194939178972,
+      "difference_ci_upper": -0.011899025919097894,
+      "permutation_p_raw": 9.999000099990002e-05,
+      "permutation_seed": 48,
+      "permutation_p_holm": 0.0007999200079992001,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus PubMedBERT",
+      "metric": "macro_f1",
+      "difference": -0.02042178941730488,
+      "difference_ci_lower": -0.028940707604046562,
+      "difference_ci_upper": -0.0122872641975974,
+      "permutation_p_raw": 9.999000099990002e-05,
+      "permutation_seed": 48,
+      "permutation_p_holm": 0.0007999200079992001,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus BioBERT",
+      "metric": "accuracy",
+      "difference": -0.017988007994670152,
+      "difference_ci_lower": -0.025723101740696204,
+      "difference_ci_upper": -0.010331873675653786,
+      "permutation_p_raw": 9.999000099990002e-05,
+      "permutation_seed": 49,
+      "permutation_p_holm": 0.0007999200079992001,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus BioBERT",
+      "metric": "macro_f1",
+      "difference": -0.01837606389861468,
+      "difference_ci_lower": -0.026676939395700563,
+      "difference_ci_upper": -0.0102636367759648,
+      "permutation_p_raw": 9.999000099990002e-05,
+      "permutation_seed": 49,
+      "permutation_p_holm": 0.0007999200079992001,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus SciBERT",
+      "metric": "accuracy",
+      "difference": -0.014656895403064585,
+      "difference_ci_lower": -0.02294202396040077,
+      "difference_ci_upper": -0.006557136459031233,
+      "permutation_p_raw": 0.0006999300069993001,
+      "permutation_seed": 50,
+      "permutation_p_holm": 0.0020997900209979003,
+      "holm_significant_0.05": true
+    },
+    {
+      "comparison": "ModernBERT-base minus SciBERT",
+      "metric": "macro_f1",
+      "difference": -0.01907906839072593,
+      "difference_ci_lower": -0.02743541771910689,
+      "difference_ci_upper": -0.011057365271620684,
+      "permutation_p_raw": 9.999000099990002e-05,
+      "permutation_seed": 50,
+      "permutation_p_holm": 0.0007999200079992001,
+      "holm_significant_0.05": true
+    }
+  ],
+  "settings": {
+    "seed": 42,
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 43,
+    "permutation_replicates": 10000,
+    "permutation_seeds": [
+      47,
+      48,
+      49,
+      50
+    ],
+    "bootstrap_unit": "CDSR.id (entire Cochrane review)",
+    "multiple_testing": "Holm correction across 8 tests"
+  },
+  "interpretation_limit": "ModernBERT differs from the biomedical encoders in architecture, pretraining corpus, pretraining scale, and model generation. This is a strong practical general-domain baseline, but it does not by itself identify a pure causal effect of biomedical pretraining. Intervals are conditional on the fitted single-seed checkpoints and fixed test split."
+}

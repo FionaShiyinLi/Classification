@@ -1,0 +1,63 @@
+# Operating-system and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+.venv/
+venv/
+.swift-module-cache/
+.pycache_tmp/
+
+# Secrets. Keep only the empty public template.
+.env
+.env.*
+!.env.example
+
+# Restricted source data and private analysis outputs
+restricted_data/
+private_outputs/
+private_tools/
+
+# Manuscript working files are maintained outside the public repository
+*.docx
+*.doc
+*.pdf
+manuscript_tables/
+
+# Model checkpoints, optimizer state, and generated training directories
+outputs*/
+**/outputs/
+**/checkpoints/
+**/checkpoint-*/
+**/*_best/
+*.safetensors
+*.pt
+*.pth
+*.bin
+
+# Track only reviewed, text-free summaries in results/.
+results/**
+!results/*.json
+!results/README.md
+!results/analyses/
+!results/analyses/**
+
+# Never publish row-level predictions, request logs, caches, or raw API payloads.
+**/cache/
+**/batches/
+**/raw_responses/
+**/*predictions*.csv
+**/request_log*.csv
+**/aligned_test_predictions.csv
+**/leakage_similarity_test_items.csv
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.bak

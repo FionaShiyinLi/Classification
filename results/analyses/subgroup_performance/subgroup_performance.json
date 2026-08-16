@@ -1,0 +1,13 @@
+{
+  "analysis": "primary Bioformer predictions stratified by the original 16 subgroups",
+  "test_outcomes_n": 4503,
+  "correct_n": 4122,
+  "accuracy": 0.9153897401732178,
+  "prediction_counts": {
+    "Objective": 340,
+    "Semi-objective": 1973,
+    "Subjective": 2190
+  },
+  "mapping_file": "subgroup_mapping.json",
+  "outputs_contain_source_text": false
+}

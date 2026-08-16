@@ -1,7 +1,8 @@
 {
   "method": "Fine-Tuned Bioformer-8L (exact primary checkpoint inference)",
-  "model_path": "/Users/shiyinli/Documents/Classification/results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
-  "dataset_csv": "/Users/shiyinli/Documents/Classification/outcome_3cls.csv",
+  "checkpoint_directory_name": "best_model",
+  "dataset_csv": "outcome_3cls.csv",
+  "dataset_note": "Restricted full dataset; the repository CSV is a format sample only.",
   "n_test_samples": 4503,
   "accuracy": 0.9153897401732178,
   "macro_f1": 0.9151846159003062,
@@ -66,12 +67,12 @@
   "time_per_sample": 0.0019931660846368806,
   "artifact_id": "table1_primary_reference_bioformer8l",
   "run_family": "primary_evaluation",
-  "paper_role": "Primary Bioformer-8L reference checkpoint selected by validation macro F1 in the reduced sweep",
+  "paper_role": "Primary Bioformer-8L reference checkpoint from the reduced sweep; configuration selected by validation accuracy with validation macro F1 as the tie-breaker",
   "nominal_hparams": {
     "learning_rate": 3e-05,
     "warmup_ratio": 0.04,
     "unfreeze_blocks": 8,
     "rdrop_alpha": 1.0
   },
-  "provenance_note": "This is the validation-selected primary reference checkpoint used for the main evaluation. It was chosen by validation macro F1 within the reduced 16-run sweep and then evaluated once on the held-out test set."
+  "provenance_note": "This is the primary reference checkpoint used for the main evaluation. In the reduced 16-run sweep, each training run restored the epoch with the best validation macro F1, and the final configuration was chosen by highest validation accuracy, with validation macro F1 used as the tie-breaker. It was then evaluated once on the held-out test set."
 }

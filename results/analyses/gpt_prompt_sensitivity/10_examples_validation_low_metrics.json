@@ -1,0 +1,69 @@
+{
+  "n": 2252,
+  "accuracy": 0.7992895204262878,
+  "macro_f1": 0.8202181841111488,
+  "weighted_f1": 0.795446391951939,
+  "cohen_kappa": 0.6375987262779232,
+  "confusion_matrix": [
+    [
+      136,
+      17,
+      4
+    ],
+    [
+      13,
+      652,
+      318
+    ],
+    [
+      0,
+      100,
+      1012
+    ]
+  ],
+  "classification_report": {
+    "Objective": {
+      "precision": 0.912751677852349,
+      "recall": 0.8662420382165605,
+      "f1-score": 0.8888888888888888,
+      "support": 157.0
+    },
+    "Semi-objective": {
+      "precision": 0.8478543563068921,
+      "recall": 0.6632756866734486,
+      "f1-score": 0.7442922374429224,
+      "support": 983.0
+    },
+    "Subjective": {
+      "precision": 0.7586206896551724,
+      "recall": 0.9100719424460432,
+      "f1-score": 0.8274734260016353,
+      "support": 1112.0
+    },
+    "accuracy": 0.7992895204262878,
+    "macro avg": {
+      "precision": 0.8397422412714711,
+      "recall": 0.8131965557786841,
+      "f1-score": 0.8202181841111488,
+      "support": 2252.0
+    },
+    "weighted avg": {
+      "precision": 0.8083166308033062,
+      "recall": 0.7992895204262878,
+      "f1-score": 0.795446391951939,
+      "support": 2252.0
+    }
+  },
+  "phase": "validation",
+  "reasoning_effort": "low",
+  "model": "openai/gpt-5.2",
+  "completed_at_utc": "2026-08-12T20:20:42.679321+00:00",
+  "usage": {
+    "input_tokens": 176010,
+    "output_tokens": 74797,
+    "total_tokens": 250807,
+    "reasoning_tokens": 42579
+  },
+  "successful_batches": 46,
+  "fallback_predictions": 0
+}

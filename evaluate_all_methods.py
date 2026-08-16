@@ -1,5 +1,6 @@
 
 import os, json, time, re
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
@@ -12,20 +13,29 @@ from scipy import stats
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
+from project_config import REPO_ROOT
+
 # Configuration
 SEED = 42
-CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
+CSV_3CLS = os.getenv(
+    "OUTCOME_DATASET_CSV",
+    str(REPO_ROOT / "restricted_data" / "outcome_3cls.csv"),
+)
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
-OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
-CANONICAL_RESULTS_PATH = os.getenv("OUTCOME_EVALUATION_RESULTS_PATH", "results/evaluation_results.json")
+OUTPUT_DIR = str(REPO_ROOT / "private_outputs" / "core_evaluation")
+CANONICAL_RESULTS_PATH = os.getenv(
+    "OUTCOME_EVALUATION_RESULTS_PATH",
+    str(REPO_ROOT / "private_outputs" / "core_evaluation" / "evaluation_results.json"),
+)
 
 # Model path conventions:
-# - Primary reference checkpoint: validation-selected Bioformer-8L sweep winner
-#   used for the main paper evaluation.
+# - Primary reference checkpoint: reduced-sweep winner chosen by validation
+#   accuracy, with validation macro F1 as the tie-breaker. Within each run,
+#   the trainer restored the epoch with the best validation macro F1.
 TUNED_4BLOCK_MODEL_PATH = os.getenv(
     "OUTCOME_REFERENCE_CHECKPOINT",
     "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
@@ -34,7 +44,11 @@ LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() no
 PRIMARY_REFERENCE_RUN = {
     "artifact_id": "table1_primary_reference_bioformer8l",
     "run_family": "primary_evaluation",
-    "paper_role": "Primary Bioformer-8L reference checkpoint selected by validation macro F1 in the reduced sweep",
+    "paper_role": (
+        "Primary Bioformer-8L reference checkpoint from the reduced sweep; "
+        "configuration selected by validation accuracy with validation macro F1 "
+        "as the tie-breaker"
+    ),
     "nominal_hparams": {
         "learning_rate": 3e-5,
         "warmup_ratio": 0.04,
@@ -42,9 +56,11 @@ PRIMARY_REFERENCE_RUN = {
         "rdrop_alpha": 1.0,
     },
     "provenance_note": (
-        "This is the validation-selected primary reference checkpoint used for the main evaluation. "
-        "It was chosen by validation macro F1 within the reduced 16-run sweep and then evaluated once "
-        "on the held-out test set."
+        "This is the primary reference checkpoint used for the main evaluation. "
+        "In the reduced 16-run sweep, each training run restored the epoch with "
+        "the best validation macro F1, and the final configuration was chosen by "
+        "highest validation accuracy, with validation macro F1 used as the tie-breaker. "
+        "It was then evaluated once on the held-out test set."
     ),
 }
 MODEL_NAME = "bioformers/bioformer-8L"
@@ -54,8 +70,15 @@ MAX_LENGTH = 128  # Match finetune_high_accuracy.py
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OUTCOME_LLM_MODEL", "openai/gpt-5.2")
 
-# Hybrid approach thresholds
-CONFIDENCE_THRESHOLD = 0.7  # Use LLM for predictions below this confidence
+# The manuscript's current hybrid result is produced by the validation-only
+# workflow in analyses/hybrid_threshold.  The original 0.70 heuristic remains
+# available only for historical reproducibility and is disabled by default.
+LEGACY_CONFIDENCE_THRESHOLD = 0.70
+RUN_LEGACY_HYBRID = os.getenv("OUTCOME_RUN_LEGACY_HYBRID", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
 USE_SAVED_TEST_PREDICTIONS = False  # Force canonical split regeneration
 
 np.random.seed(SEED)
@@ -658,7 +681,7 @@ def main():
         )
         results_ft["inference_time"] = ft_time
         results_ft["time_per_sample"] = ft_time / len(texts)
-        results_ft["model_path"] = TUNED_4BLOCK_MODEL_PATH
+        results_ft["checkpoint_directory_name"] = Path(TUNED_4BLOCK_MODEL_PATH).name
         results_ft["artifact_id"] = PRIMARY_REFERENCE_RUN["artifact_id"]
         results_ft["run_family"] = PRIMARY_REFERENCE_RUN["run_family"]
         results_ft["paper_role"] = PRIMARY_REFERENCE_RUN["paper_role"]
@@ -702,14 +725,20 @@ def main():
         llm_evaluator = None
     
     # Method 3: Hybrid approach
-    if ft_evaluator and llm_evaluator:
-        print("\n[4/5] Evaluating hybrid approach...")
-        hybrid_evaluator = HybridEvaluator(ft_evaluator, llm_evaluator, CONFIDENCE_THRESHOLD)
+    if ft_evaluator and llm_evaluator and RUN_LEGACY_HYBRID:
+        print("\n[4/5] Evaluating legacy 0.70 heuristic hybrid...")
+        hybrid_evaluator = HybridEvaluator(
+            ft_evaluator, llm_evaluator, LEGACY_CONFIDENCE_THRESHOLD
+        )
         start_time = time.time()
         preds_hybrid, hybrid_stats = hybrid_evaluator.predict(texts)
         hybrid_time = time.time() - start_time
         
-        results_hybrid = evaluate_method(labels, preds_hybrid, "Hybrid (Fine-tuned + LLM fallback)")
+        results_hybrid = evaluate_method(
+            labels,
+            preds_hybrid,
+            "Legacy exploratory hybrid (0.70 heuristic)",
+        )
         results_hybrid["inference_time"] = hybrid_time
         results_hybrid["time_per_sample"] = hybrid_time / len(texts)
         results_hybrid["hybrid_stats"] = hybrid_stats
@@ -719,6 +748,12 @@ def main():
         print(f"  Fine-tuned only: {hybrid_stats['fine_tuned_only']}")
         print(f"  LLM fallback: {hybrid_stats['llm_fallback']}")
         print(f"  Time: {hybrid_time:.2f}s")
+    elif ft_evaluator and llm_evaluator:
+        print(
+            "\n[4/5] Skipping the obsolete 0.70 hybrid. Run "
+            "analyses/hybrid_threshold/run_threshold_experiment.py for the "
+            "current validation-selected 0.55 analysis."
+        )
     
     # Save results
     print("\n[5/5] Saving results...")
@@ -774,16 +809,14 @@ def main():
     print("  - Primary evaluation reference checkpoint (Bioformer-8L, 8 blocks, lr=3e-5, warmup=0.04, R-Drop=1.0): ~91.54% accuracy")
     print("    Note: this is the validation-selected checkpoint for the main paper.")
     print("  - LLM API (GPT-5.2, improved prompt): ~59.29% accuracy")
-    print("  - Hybrid (confidence < 0.7): ~91.23% accuracy")
+    print("  - Validation-selected hybrid (threshold 0.55): ~91.52% accuracy; no improvement over Bioformer")
     print("\nIf fine-tuned model accuracy is significantly different:")
     print("  1. Check that the correct model checkpoint is loaded (see TUNED_4BLOCK_MODEL_PATH).")
     print("  2. Verify test data preprocessing matches the canonical training split (seed=42).")
     print("  3. Ensure predictions are being read from the intended checkpoint directory.")
     print("\nAuthoritative result files for verification:")
-    print(f"  - {CANONICAL_RESULTS_PATH} (canonical results for all methods)")
-    print("  - results/search_results.json (hyperparameter search results)")
-    print("  - results/ablation_results.json (ablation study results)")
-    print("  - results/model_comparison_results.json (cross-model results)")
+    print(f"  - {CANONICAL_RESULTS_PATH} (new private run output)")
+    print("  - results/ (reviewed manuscript artifacts; never overwritten automatically)")
 
 if __name__ == "__main__":
     main()

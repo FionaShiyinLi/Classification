@@ -1,0 +1,7 @@
+{
+  "split": "validation",
+  "n_items": 2252,
+  "dataset_sha256": "158072395b7c9e17d2083914a3c128e5cc4c3641bdd0e7a66169ea74b7fb3cf7",
+  "config_sha256": "b0e41dbc43fc711c5965b821c556f7bcb7ceb3f7af714be5b39c97bb5bf21b2d",
+  "weights_sha256": "f449752b3f0aa2b6eda34b0b231ceba57ca45b5f3c337db6fc27a8f8b6c287ba"
+}
