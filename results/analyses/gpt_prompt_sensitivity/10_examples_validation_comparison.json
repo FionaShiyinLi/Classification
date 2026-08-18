@@ -1,0 +1,167 @@
+{
+  "comparison_role": "validation-only exploratory comparison",
+  "selection_rule": "Choose the higher validation accuracy; if accuracies are exactly equal, choose the higher validation macro F1; if both are equal, choose none.",
+  "none": {
+    "n": 2252,
+    "accuracy": 0.7535523978685613,
+    "macro_f1": 0.6585557217758318,
+    "weighted_f1": 0.7399596914035474,
+    "cohen_kappa": 0.5409562474956358,
+    "confusion_matrix": [
+      [
+        49,
+        104,
+        4
+      ],
+      [
+        6,
+        615,
+        362
+      ],
+      [
+        0,
+        79,
+        1033
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.8909090909090909,
+        "recall": 0.31210191082802546,
+        "f1-score": 0.46226415094339623,
+        "support": 157.0
+      },
+      "Semi-objective": {
+        "precision": 0.7706766917293233,
+        "recall": 0.6256358087487284,
+        "f1-score": 0.6906232453677709,
+        "support": 983.0
+      },
+      "Subjective": {
+        "precision": 0.7383845604002859,
+        "recall": 0.9289568345323741,
+        "f1-score": 0.8227797690163282,
+        "support": 1112.0
+      },
+      "accuracy": 0.7535523978685613,
+      "macro avg": {
+        "precision": 0.7999901143462335,
+        "recall": 0.6222315180363759,
+        "f1-score": 0.6585557217758318,
+        "support": 2252.0
+      },
+      "weighted avg": {
+        "precision": 0.763113475314285,
+        "recall": 0.7535523978685613,
+        "f1-score": 0.7399596914035474,
+        "support": 2252.0
+      }
+    },
+    "phase": "validation",
+    "reasoning_effort": "none",
+    "model": "openai/gpt-5.2",
+    "completed_at_utc": "2026-08-12T20:03:37.893392+00:00",
+    "usage": {
+      "input_tokens": 176010,
+      "output_tokens": 26470,
+      "total_tokens": 202480,
+      "reasoning_tokens": 0
+    },
+    "successful_batches": 46,
+    "fallback_predictions": 0
+  },
+  "low": {
+    "n": 2252,
+    "accuracy": 0.7992895204262878,
+    "macro_f1": 0.8202181841111488,
+    "weighted_f1": 0.795446391951939,
+    "cohen_kappa": 0.6375987262779232,
+    "confusion_matrix": [
+      [
+        136,
+        17,
+        4
+      ],
+      [
+        13,
+        652,
+        318
+      ],
+      [
+        0,
+        100,
+        1012
+      ]
+    ],
+    "classification_report": {
+      "Objective": {
+        "precision": 0.912751677852349,
+        "recall": 0.8662420382165605,
+        "f1-score": 0.8888888888888888,
+        "support": 157.0
+      },
+      "Semi-objective": {
+        "precision": 0.8478543563068921,
+        "recall": 0.6632756866734486,
+        "f1-score": 0.7442922374429224,
+        "support": 983.0
+      },
+      "Subjective": {
+        "precision": 0.7586206896551724,
+        "recall": 0.9100719424460432,
+        "f1-score": 0.8274734260016353,
+        "support": 1112.0
+      },
+      "accuracy": 0.7992895204262878,
+      "macro avg": {
+        "precision": 0.8397422412714711,
+        "recall": 0.8131965557786841,
+        "f1-score": 0.8202181841111488,
+        "support": 2252.0
+      },
+      "weighted avg": {
+        "precision": 0.8083166308033062,
+        "recall": 0.7992895204262878,
+        "f1-score": 0.795446391951939,
+        "support": 2252.0
+      }
+    },
+    "phase": "validation",
+    "reasoning_effort": "low",
+    "model": "openai/gpt-5.2",
+    "completed_at_utc": "2026-08-12T20:20:42.679321+00:00",
+    "usage": {
+      "input_tokens": 176010,
+      "output_tokens": 74797,
+      "total_tokens": 250807,
+      "reasoning_tokens": 42579
+    },
+    "successful_batches": 46,
+    "fallback_predictions": 0
+  },
+  "absolute_difference_low_minus_none": {
+    "accuracy": 0.04573712255772644,
+    "macro_f1": 0.161662462335317
+  },
+  "paired_disagreement": {
+    "n": 208,
+    "percent": 9.236234458259325,
+    "none_only_correct": 51,
+    "low_only_correct": 154
+  },
+  "paired_bootstrap": {
+    "accuracy_low_minus_none": {
+      "mean": 0.04572158081705151,
+      "ci_2.5_percentile": 0.03374777975133214,
+      "ci_97.5_percentile": 0.05817051509769089,
+      "probability_difference_gt_zero": 1.0
+    },
+    "macro_f1_low_minus_none": {
+      "mean": 0.16184032881536867,
+      "ci_2.5_percentile": 0.13277432973182082,
+      "ci_97.5_percentile": 0.1920884288735251,
+      "probability_difference_gt_zero": 1.0
+    }
+  },
+  "created_at_utc": "2026-08-12T20:20:53.932432+00:00"
+}

@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-08-11T21:30:15.392895+00:00",
+  "threshold_lock": "selected_threshold.json",
+  "selected_threshold": 0.55,
+  "test_n": 4503,
+  "test_metrics": {
+    "threshold": 0.55,
+    "coverage": 0.9864534754608039,
+    "routing_rate": 0.013546524539196091,
+    "retained_bioformer_accuracy": 0.920081044574516,
+    "selective_error": 0.079918955425484,
+    "routed_bioformer_accuracy": 0.5737704918032787,
+    "routed_llm_accuracy": 0.5573770491803278,
+    "hybrid_accuracy": 0.9151676660004442,
+    "hybrid_macro_f1": 0.9138915747769166,
+    "accuracy_delta_vs_bioformer": -0.00022207417277364527,
+    "retained_n": 4442,
+    "routed_n": 61
+  },
+  "dataset_sha256": "158072395b7c9e17d2083914a3c128e5cc4c3641bdd0e7a66169ea74b7fb3cf7",
+  "checkpoint_signature": {
+    "config_sha256": "b0e41dbc43fc711c5965b821c556f7bcb7ceb3f7af714be5b39c97bb5bf21b2d",
+    "weights_sha256": "f449752b3f0aa2b6eda34b0b231ceba57ca45b5f3c337db6fc27a8f8b6c287ba"
+  },
+  "llm_model": "openai/gpt-5.2"
+}

@@ -1,0 +1,8 @@
+{
+  "analysis": "independently double-coded subset agreement",
+  "double_coded_subset_n": 948,
+  "subgroup_kappa": 0.9338108507415235,
+  "mapped_three_class_kappa": 0.9417449569255858,
+  "mapping_file": "subgroup_mapping.json",
+  "outputs_contain_source_text": false
+}

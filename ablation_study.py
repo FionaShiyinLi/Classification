@@ -14,8 +14,22 @@ from transformers import (
 from sklearn.metrics import accuracy_score, f1_score
 from datasets import Dataset, DatasetDict, Value
 
+from project_config import (
+    ABLATION_SCHEDULER,
+    ADAM_BETA1,
+    ADAM_BETA2,
+    ADAM_EPSILON,
+    MAX_GRAD_NORM,
+    MODEL_REVISIONS,
+    OPTIMIZER_NAME,
+    REPO_ROOT,
+)
+
 SEED = 42
-CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
+CSV_3CLS = os.getenv(
+    "OUTCOME_DATASET_CSV",
+    str(REPO_ROOT / "restricted_data" / "outcome_3cls.csv"),
+)
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
@@ -29,8 +43,14 @@ LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() no
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
 
-OUTPUT_DIR = "./outputs_ablation"
-RESULTS_DIR = "./results"
+OUTPUT_DIR = os.getenv(
+    "OUTCOME_ABLATION_OUTPUT_DIR",
+    str(REPO_ROOT / "private_outputs" / "ablation" / "training"),
+)
+RESULTS_DIR = os.getenv(
+    "OUTCOME_ABLATION_RESULTS_DIR",
+    str(REPO_ROOT / "private_outputs" / "ablation"),
+)
 REFERENCE_CHECKPOINT = PRIMARY_CHECKPOINT_PATH
 SPLIT_PROTOCOL = "canonical_split_A_seed42_70_10_20"
 REFERENCE_EXPERIMENT_NAME = "Primary Reference (R-Drop + Class Weights + 8 Blocks)"
@@ -428,18 +448,32 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
     print(f"Experiment: {config['name']}")
     print(f"{'='*60}")
     
-    tokenizer = AutoTokenizer.from_pretrained(INIT_MODEL_SOURCE, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(
+        INIT_MODEL_SOURCE,
+        use_fast=True,
+        revision=MODEL_REVISIONS.get(INIT_MODEL_SOURCE),
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    model_config = AutoConfig.from_pretrained(INIT_MODEL_SOURCE, num_labels=NUM_LABELS,
-                                             id2label=ID2LABEL, label2id=LABEL2ID, local_files_only=LOCAL_FILES_ONLY)
+    model_config = AutoConfig.from_pretrained(
+        INIT_MODEL_SOURCE,
+        num_labels=NUM_LABELS,
+        id2label=ID2LABEL,
+        label2id=LABEL2ID,
+        revision=MODEL_REVISIONS.get(INIT_MODEL_SOURCE),
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     model = AutoModelForSequenceClassification.from_pretrained(
-        INIT_MODEL_SOURCE, config=model_config, local_files_only=LOCAL_FILES_ONLY
+        INIT_MODEL_SOURCE,
+        config=model_config,
+        revision=MODEL_REVISIONS.get(INIT_MODEL_SOURCE),
+        local_files_only=LOCAL_FILES_ONLY,
     )
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=config["unfreeze_blocks"])
     
-    use_fp16 = False if device_type == "mps" else True
+    use_fp16 = device_type == "cuda"
     
     class_weights = None
     if config["use_class_weights"]:
@@ -454,7 +488,12 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
         output_dir=os.path.join(OUTPUT_DIR, exp_name),
         save_strategy="epoch", load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
-        learning_rate=BASELINE_CONFIG["lr"], lr_scheduler_type="cosine",
+        learning_rate=BASELINE_CONFIG["lr"],
+        lr_scheduler_type=ABLATION_SCHEDULER,
+        optim=OPTIMIZER_NAME,
+        adam_beta1=ADAM_BETA1,
+        adam_beta2=ADAM_BETA2,
+        adam_epsilon=ADAM_EPSILON,
         per_device_train_batch_size=BASELINE_CONFIG["batch_size"],
         per_device_eval_batch_size=BASELINE_CONFIG["batch_size"],
         gradient_accumulation_steps=BASELINE_CONFIG["grad_accum"],
@@ -462,7 +501,7 @@ def train_ablation(config: Dict, train_tok, val_tok, test_tok, device, device_ty
         weight_decay=BASELINE_CONFIG["weight_decay"],
         warmup_ratio=BASELINE_CONFIG["warmup_r"],
         logging_steps=50, seed=SEED, fp16=use_fp16,
-        max_grad_norm=1.0, report_to="none",
+        max_grad_norm=MAX_GRAD_NORM, report_to="none",
         dataloader_num_workers=0,
         group_by_length=True,
     )
@@ -521,7 +560,12 @@ def main():
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
     ds = stratified_split_70_10_20(df)
     
-    tokenizer = AutoTokenizer.from_pretrained(INIT_MODEL_SOURCE, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(
+        INIT_MODEL_SOURCE,
+        use_fast=True,
+        revision=MODEL_REVISIONS.get(INIT_MODEL_SOURCE),
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     def enc(b):
         return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=BASELINE_CONFIG["max_length"])
     

@@ -1,0 +1,26 @@
+{
+  "mapping_name": "study-specific operational 16-subgroup-to-three-class mapping",
+  "label_ids": {
+    "0": "Objective",
+    "1": "Semi-objective",
+    "2": "Subjective"
+  },
+  "subgroups": [
+    {"code": 1, "name": "All-cause mortality", "mapped_label_id": 0, "mapped_label": "Objective"},
+    {"code": 2, "name": "Obstetric outcomes", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 3, "name": "Cause-specific mortality, major morbidity, or composite endpoints", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 4, "name": "Resource use or hospital stay", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 5, "name": "Surgical or device success or failure", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 6, "name": "Withdrawals", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 7, "name": "Structure-related outcomes", "mapped_label_id": 1, "mapped_label": "Semi-objective"},
+    {"code": 8, "name": "General physical health indicators", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 9, "name": "Adverse events", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 10, "name": "Infections or new disease onset", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 11, "name": "Signs and symptoms", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 12, "name": "Pain", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 13, "name": "Quality of life or functioning", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 14, "name": "Mental health indicators", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 15, "name": "Biological markers", "mapped_label_id": 2, "mapped_label": "Subjective"},
+    {"code": 16, "name": "Miscellaneous outcomes", "mapped_label_id": 2, "mapped_label": "Subjective"}
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "design": "Fixed-checkpoint analysis using whole-review clustered bootstrap and paired whole-review permutation tests.",
+  "n_test_outcomes": 4503,
+  "n_test_reviews": 2090,
+  "settings": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 43,
+    "permutation_replicates": 10000,
+    "permutation_seed_base": 44,
+    "permutation_seeds": {
+      "PubMedBERT_vs_Bioformer-8L": 44,
+      "BioBERT_vs_Bioformer-8L": 45,
+      "SciBERT_vs_Bioformer-8L": 46
+    },
+    "confidence_interval": "2.5th and 97.5th percentiles",
+    "bootstrap_unit": "CDSR.id (entire review)",
+    "multiple_testing": "Holm correction across 6 planned tests",
+    "difference_direction": "comparator minus Bioformer-8L",
+    "difference_ci_note": "Paired difference intervals are nominal 95% intervals and are not multiplicity-adjusted; formal inference uses the Holm-adjusted permutation p-values."
+  },
+  "point_metrics": {
+    "Bioformer-8L": {
+      "accuracy": 0.9153897401732178,
+      "macro_f1": 0.9151846159003059,
+      "weighted_f1": 0.9154229974842241,
+      "kappa": 0.84978603188701,
+      "Objective_precision": 0.8794117647058823,
+      "Objective_recall": 0.9552715654952076,
+      "Objective_f1": 0.9157733537519142,
+      "Semi-objective_precision": 0.9052204764318297,
+      "Semi-objective_recall": 0.9079816980172852,
+      "Semi-objective_f1": 0.9065989847715735,
+      "Subjective_precision": 0.9301369863013699,
+      "Subjective_recall": 0.9163292847503374,
+      "Subjective_f1": 0.9231815091774302
+    },
+    "PubMedBERT": {
+      "accuracy": 0.9222740395292027,
+      "macro_f1": 0.9248589877064076,
+      "weighted_f1": 0.9222988604560713,
+      "kappa": 0.8616690399855071,
+      "Objective_precision": 0.9166666666666666,
+      "Objective_recall": 0.9488817891373802,
+      "Objective_f1": 0.9324960753532181,
+      "Semi-objective_precision": 0.9092284417549168,
+      "Semi-objective_recall": 0.9166243009659379,
+      "Semi-objective_f1": 0.9129113924050632,
+      "Subjective_precision": 0.9348816029143898,
+      "Subjective_recall": 0.9235267656320288,
+      "Subjective_f1": 0.9291694953609415
+    },
+    "BioBERT": {
+      "accuracy": 0.9207195203197868,
+      "macro_f1": 0.9228132621877174,
+      "weighted_f1": 0.9207848574315717,
+      "kappa": 0.8589185184457097,
+      "Objective_precision": 0.9161490683229814,
+      "Objective_recall": 0.9424920127795527,
+      "Objective_f1": 0.9291338582677167,
+      "Semi-objective_precision": 0.9031452820768847,
+      "Semi-objective_recall": 0.9196746314184037,
+      "Semi-objective_f1": 0.9113350125944586,
+      "Subjective_precision": 0.9375573921028466,
+      "Subjective_recall": 0.918578497525866,
+      "Subjective_f1": 0.927970915700977
+    },
+    "SciBERT": {
+      "accuracy": 0.9173884077281812,
+      "macro_f1": 0.9235162666798287,
+      "weighted_f1": 0.9173403400592053,
+      "kappa": 0.8529027607932479,
+      "Objective_precision": 0.9230769230769231,
+      "Objective_recall": 0.9584664536741214,
+      "Objective_f1": 0.9404388714733544,
+      "Semi-objective_precision": 0.9089048106448311,
+      "Semi-objective_recall": 0.9028978139298424,
+      "Semi-objective_f1": 0.9058913542463657,
+      "Subjective_precision": 0.9240107913669064,
+      "Subjective_recall": 0.9244264507422402,
+      "Subjective_f1": 0.9242185743197662
+    }
+  },
+  "table1_uncertainty": [
+    {
+      "metric": "accuracy",
+      "estimate": 0.9153897401732178,
+      "ci_lower": 0.9058345720444235,
+      "ci_upper": 0.924868335725735
+    },
+    {
+      "metric": "macro_f1",
+      "estimate": 0.9151846159003059,
+      "ci_lower": 0.9018784868709727,
+      "ci_upper": 0.9271016867425258
+    },
+    {
+      "metric": "weighted_f1",
+      "estimate": 0.9154229974842241,
+      "ci_lower": 0.9058630564997544,
+      "ci_upper": 0.9248972033566653
+    },
+    {
+      "metric": "kappa",
+      "estimate": 0.84978603188701,
+      "ci_lower": 0.8327481316433386,
+      "ci_upper": 0.8663653248688385
+    },
+    {
+      "metric": "Objective_precision",
+      "estimate": 0.8794117647058823,
+      "ci_lower": 0.8342303282536473,
+      "ci_upper": 0.9204545454545454
+    },
+    {
+      "metric": "Objective_recall",
+      "estimate": 0.9552715654952076,
+      "ci_lower": 0.9262813421828909,
+      "ci_upper": 0.9804576124201531
+    },
+    {
+      "metric": "Objective_f1",
+      "estimate": 0.9157733537519142,
+      "ci_lower": 0.8851340859493034,
+      "ci_upper": 0.9423936932097936
+    },
+    {
+      "metric": "Semi-objective_precision",
+      "estimate": 0.9052204764318297,
+      "ci_lower": 0.889573392324745,
+      "ci_upper": 0.919697854106215
+    },
+    {
+      "metric": "Semi-objective_recall",
+      "estimate": 0.9079816980172852,
+      "ci_lower": 0.8926904518617115,
+      "ci_upper": 0.9224260998897079
+    },
+    {
+      "metric": "Semi-objective_f1",
+      "estimate": 0.9065989847715735,
+      "ci_lower": 0.8950085181266788,
+      "ci_upper": 0.9176636435081983
+    },
+    {
+      "metric": "Subjective_precision",
+      "estimate": 0.9301369863013699,
+      "ci_lower": 0.9175205948940754,
+      "ci_upper": 0.9418820081711363
+    },
+    {
+      "metric": "Subjective_recall",
+      "estimate": 0.9163292847503374,
+      "ci_lower": 0.9030273730123192,
+      "ci_upper": 0.9289688232371822
+    },
+    {
+      "metric": "Subjective_f1",
+      "estimate": 0.9231815091774302,
+      "ci_lower": 0.9132220737188349,
+      "ci_upper": 0.9326378453040939
+    }
+  ],
+  "table2_uncertainty": [
+    {
+      "model": "Bioformer-8L",
+      "accuracy": 0.9153897401732178,
+      "accuracy_ci_lower": 0.9058345720444235,
+      "accuracy_ci_upper": 0.924868335725735,
+      "macro_f1": 0.9151846159003059,
+      "macro_f1_ci_lower": 0.9018784868709727,
+      "macro_f1_ci_upper": 0.9271016867425258
+    },
+    {
+      "model": "PubMedBERT",
+      "accuracy": 0.9222740395292027,
+      "accuracy_ci_lower": 0.9129468918218778,
+      "accuracy_ci_upper": 0.9310950381629682,
+      "macro_f1": 0.9248589877064076,
+      "macro_f1_ci_lower": 0.9127639027148735,
+      "macro_f1_ci_upper": 0.9357343576448779
+    },
+    {
+      "model": "BioBERT",
+      "accuracy": 0.9207195203197868,
+      "accuracy_ci_lower": 0.9114821341370029,
+      "accuracy_ci_upper": 0.9294776001061267,
+      "macro_f1": 0.9228132621877174,
+      "macro_f1_ci_lower": 0.9105599294340265,
+      "macro_f1_ci_upper": 0.9336948067814941
+    },
+    {
+      "model": "SciBERT",
+      "accuracy": 0.9173884077281812,
+      "accuracy_ci_lower": 0.9076368069588625,
+      "accuracy_ci_upper": 0.9265039191531393,
+      "macro_f1": 0.9235162666798287,
+      "macro_f1_ci_lower": 0.9118111834774705,
+      "macro_f1_ci_upper": 0.9340138100174962
+    }
+  ],
+  "planned_comparisons": [
+    {
+      "comparison": "PubMedBERT minus Bioformer-8L",
+      "metric": "accuracy",
+      "difference": 0.006884299355984891,
+      "difference_ci_lower": 0.0006564479631512715,
+      "difference_ci_upper": 0.013255597184981607,
+      "permutation_p_raw": 0.03849615038496151,
+      "permutation_replicates": 10000,
+      "permutation_seed": 44,
+      "permutation_p_holm": 0.19248075192480754,
+      "holm_significant_0.05": false
+    },
+    {
+      "comparison": "PubMedBERT minus Bioformer-8L",
+      "metric": "macro_f1",
+      "difference": 0.009674371806101756,
+      "difference_ci_lower": 0.0022928557681099193,
+      "difference_ci_upper": 0.017310684004983905,
+      "permutation_p_raw": 0.0122987701229877,
+      "permutation_replicates": 10000,
+      "permutation_seed": 44,
+      "permutation_p_holm": 0.0737926207379262,
+      "holm_significant_0.05": false
+    },
+    {
+      "comparison": "BioBERT minus Bioformer-8L",
+      "metric": "accuracy",
+      "difference": 0.00532978014656893,
+      "difference_ci_lower": -0.001733742327520815,
+      "difference_ci_upper": 0.012308166409861255,
+      "permutation_p_raw": 0.1553844615538446,
+      "permutation_replicates": 10000,
+      "permutation_seed": 45,
+      "permutation_p_holm": 0.3107689231076892,
+      "holm_significant_0.05": false
+    },
+    {
+      "comparison": "BioBERT minus Bioformer-8L",
+      "metric": "macro_f1",
+      "difference": 0.007628646287411556,
+      "difference_ci_lower": -0.0005859171237500208,
+      "difference_ci_upper": 0.015902161858563954,
+      "permutation_p_raw": 0.0684931506849315,
+      "permutation_replicates": 10000,
+      "permutation_seed": 45,
+      "permutation_p_holm": 0.2054794520547945,
+      "holm_significant_0.05": false
+    },
+    {
+      "comparison": "SciBERT minus Bioformer-8L",
+      "metric": "accuracy",
+      "difference": 0.0019986675549633626,
+      "difference_ci_lower": -0.004718120442985124,
+      "difference_ci_upper": 0.008553057658758804,
+      "permutation_p_raw": 0.6042395760423958,
+      "permutation_replicates": 10000,
+      "permutation_seed": 46,
+      "permutation_p_holm": 0.6042395760423958,
+      "holm_significant_0.05": false
+    },
+    {
+      "comparison": "SciBERT minus Bioformer-8L",
+      "metric": "macro_f1",
+      "difference": 0.008331650779522803,
+      "difference_ci_lower": 0.0003661683959257174,
+      "difference_ci_upper": 0.01663805801601397,
+      "permutation_p_raw": 0.0476952304769523,
+      "permutation_replicates": 10000,
+      "permutation_seed": 46,
+      "permutation_p_holm": 0.19248075192480754,
+      "holm_significant_0.05": false
+    }
+  ],
+  "interpretation_limit": "Confidence intervals and tests are conditional on the fitted single-seed checkpoints and fixed test split. They do not quantify retraining, alternate-split, hyperparameter-selection, or leakage uncertainty and do not establish universal architecture-level superiority."
+}

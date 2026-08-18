@@ -1,0 +1,64 @@
+{
+  "source_data": "Data/outcome_3cls.csv",
+  "pre_dedup_valid_rows": 43332,
+  "post_dedup_rows": 22518,
+  "exact_text_label_duplicates_removed": 20814,
+  "split_sizes": {
+    "train": 15763,
+    "validation": 2252,
+    "test": 4503
+  },
+  "class_counts_after_dedup": {
+    "0": 1567,
+    "1": 9833,
+    "2": 11118
+  },
+  "unique_reviews_after_dedup": 3617,
+  "train_unique_reviews": 3318,
+  "test_unique_reviews": 2090,
+  "test_reviews_also_in_train": 1881,
+  "test_review_overlap_percent_reviews": 90.0,
+  "test_items_from_reviews_also_in_train": 4262,
+  "test_item_review_overlap_percent": 94.64801243615368,
+  "test_items_with_exact_text_in_train_any_label": 46,
+  "test_items_with_exact_text_and_label_in_train": 0,
+  "test_items_with_normalized_text_in_train_any_label": 244,
+  "test_items_with_normalized_text_and_label_in_train": 194,
+  "ngram": 5,
+  "test_items_nearest_jaccard_ge_0_75": 955,
+  "test_item_nearest_jaccard_ge_0_75_percent": 21.208083499888964,
+  "test_items_nearest_jaccard_ge_0_90": 325,
+  "test_item_nearest_jaccard_ge_0_90_percent": 7.217410615145458,
+  "similarity_bins": [
+    {
+      "similarity_bin": "<0.25",
+      "n": 369,
+      "percent": 8.194536975349767,
+      "median_similarity": 0.2
+    },
+    {
+      "similarity_bin": "0.25-<0.50",
+      "n": 1442,
+      "percent": 32.023095713968466,
+      "median_similarity": 0.3856907894736842
+    },
+    {
+      "similarity_bin": "0.50-<0.75",
+      "n": 1737,
+      "percent": 38.57428381079281,
+      "median_similarity": 0.6129032258064516
+    },
+    {
+      "similarity_bin": "0.75-<0.90",
+      "n": 630,
+      "percent": 13.990672884743505,
+      "median_similarity": 0.8035714285714286
+    },
+    {
+      "similarity_bin": ">=0.90",
+      "n": 325,
+      "percent": 7.217410615145458,
+      "median_similarity": 1.0
+    }
+  ]
+}

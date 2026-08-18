@@ -27,18 +27,32 @@ from transformers import (
     TrainingArguments,
     set_seed,
 )
+
+from project_config import (
+    ADAM_BETA1,
+    ADAM_BETA2,
+    ADAM_EPSILON,
+    MAX_GRAD_NORM,
+    MODEL_REVISIONS,
+    OPTIMIZER_NAME,
+    PRIMARY_SCHEDULER,
+    REPO_ROOT,
+)
 # ------------------------------
 # Global configuration
 # ------------------------------
 
 SEED = 42
-CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
+CSV_3CLS = os.getenv(
+    "OUTCOME_DATASET_CSV",
+    str(REPO_ROOT / "restricted_data" / "outcome_3cls.csv"),
+)
 TEXT_COL = "outcome"
 LABEL_COL = "outcome.class"
 NUM_LABELS = 3
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 LABEL2ID = {v: k for k, v in ID2LABEL.items()}
-OUTPUT_DIR = "./results"
+OUTPUT_DIR = str(REPO_ROOT / "private_outputs" / "hyperparameter_search" / "preprocessing")
 MODEL_NAME = "bioformers/bioformer-8L"
 PROJECT_ROOT = Path(__file__).resolve().parent
 REFERENCE_CHECKPOINT_PATH = str(
@@ -57,8 +71,18 @@ PATIENCE = 2
 WEIGHT_DECAY = 0.02
 LABEL_SMOOTH = 0.0
 GRAD_ACCUM = 1
-OUTPUT_ROOT = Path(os.getenv("OUTPUT_ROOT", "results/outputs_hparam_search"))
-RESULTS_DIR = Path("./results")
+OUTPUT_ROOT = Path(
+    os.getenv(
+        "OUTPUT_ROOT",
+        str(REPO_ROOT / "private_outputs" / "hyperparameter_search" / "runs"),
+    )
+)
+RESULTS_DIR = Path(
+    os.getenv(
+        "OUTCOME_SEARCH_SUMMARY_DIR",
+        str(REPO_ROOT / "private_outputs" / "hyperparameter_search"),
+    )
+)
 SEARCH_LIMIT = int(os.getenv("SEARCH_LIMIT", "0"))
 
 # Order hyperparameters so that the previously best-performing configuration appears first.
@@ -491,9 +515,17 @@ def create_training_arguments(output_dir: Path, config: HyperparamSetting, devic
             save_strategy="epoch",
             save_total_limit=1,
             load_best_model_at_end=True,
+            # Within each run, restore the epoch with the best validation macro F1.
+            # The sweep winner is chosen later by validation accuracy, with
+            # validation macro F1 used as the tie-breaker.
             metric_for_best_model="macro_f1",
             greater_is_better=True,
             learning_rate=config.learning_rate,
+            lr_scheduler_type=PRIMARY_SCHEDULER,
+            optim=OPTIMIZER_NAME,
+            adam_beta1=ADAM_BETA1,
+            adam_beta2=ADAM_BETA2,
+            adam_epsilon=ADAM_EPSILON,
             per_device_train_batch_size=BATCH_SIZE,
             per_device_eval_batch_size=BATCH_SIZE,
             gradient_accumulation_steps=GRAD_ACCUM,
@@ -506,7 +538,7 @@ def create_training_arguments(output_dir: Path, config: HyperparamSetting, devic
             dataloader_num_workers=0,
             report_to="none",
             group_by_length=True,
-            max_grad_norm=1.0,
+            max_grad_norm=MAX_GRAD_NORM,
         )
     except TypeError:
         args = TrainingArguments(
@@ -516,9 +548,17 @@ def create_training_arguments(output_dir: Path, config: HyperparamSetting, devic
             save_strategy="epoch",
             save_total_limit=1,
             load_best_model_at_end=True,
+            # Within each run, restore the epoch with the best validation macro F1.
+            # The sweep winner is chosen later by validation accuracy, with
+            # validation macro F1 used as the tie-breaker.
             metric_for_best_model="macro_f1",
             greater_is_better=True,
             learning_rate=config.learning_rate,
+            lr_scheduler_type=PRIMARY_SCHEDULER,
+            optim=OPTIMIZER_NAME,
+            adam_beta1=ADAM_BETA1,
+            adam_beta2=ADAM_BETA2,
+            adam_epsilon=ADAM_EPSILON,
             per_device_train_batch_size=BATCH_SIZE,
             per_device_eval_batch_size=BATCH_SIZE,
             gradient_accumulation_steps=GRAD_ACCUM,
@@ -531,7 +571,7 @@ def create_training_arguments(output_dir: Path, config: HyperparamSetting, devic
             dataloader_num_workers=0,
             report_to="none",
             group_by_length=True,
-            max_grad_norm=1.0,
+            max_grad_norm=MAX_GRAD_NORM,
         )
     return args
 
@@ -556,10 +596,14 @@ def run_single_setting(
         num_labels=NUM_LABELS,
         id2label=ID2LABEL,
         label2id=LABEL2ID,
+        revision=MODEL_REVISIONS[MODEL_NAME],
         local_files_only=LOCAL_FILES_ONLY,
     )
     model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME, config=config, local_files_only=LOCAL_FILES_ONLY
+        MODEL_NAME,
+        config=config,
+        revision=MODEL_REVISIONS[MODEL_NAME],
+        local_files_only=LOCAL_FILES_ONLY,
     )
     model.to(device)
     unlock_last_blocks(model, setting.unfreeze_blocks)
@@ -699,7 +743,10 @@ def main():
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(
-            MODEL_NAME, use_fast=True, local_files_only=LOCAL_FILES_ONLY
+            MODEL_NAME,
+            use_fast=True,
+            revision=MODEL_REVISIONS[MODEL_NAME],
+            local_files_only=LOCAL_FILES_ONLY,
         )
         print(f"Tokenizer loaded from local cache for model id: {MODEL_NAME}")
     except Exception:
@@ -764,12 +811,14 @@ def main():
             "run_family": "hyperparameter_search",
             "paper_role": (
                 "Single run from the hyperparameter search grid; reported for sweep comparison, "
-                "with the top run selected by validation accuracy."
+                "with each run restoring the best validation-macro-F1 epoch and the "
+                "top configuration selected by validation accuracy."
             ),
             "provenance_note": (
-                "This result comes from the hyperparameter-search workflow. The primary Bioformer "
-                "checkpoint is selected by highest validation accuracy, with validation macro F1 "
-                "used as the tie-breaker."
+                "This result comes from the hyperparameter-search workflow. Within each run, "
+                "the trainer restored the epoch with the best validation macro F1. Across runs, "
+                "the primary Bioformer checkpoint is selected by highest validation accuracy, "
+                "with validation macro F1 used as the tie-breaker."
             ),
             "is_primary_reference": False,
         }
@@ -791,7 +840,7 @@ def main():
         print("No successful runs recorded.")
         return
 
-    print("\nBest configuration (by validation accuracy):")
+    print("\nBest configuration (by validation accuracy; within-run checkpoint by validation macro F1):")
     print(json.dumps(
         {
             **asdict(best_result.config),

@@ -11,18 +11,38 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from datasets import Dataset, DatasetDict, Value
 
+from project_config import (
+    ADAM_BETA1,
+    ADAM_BETA2,
+    ADAM_EPSILON,
+    MAX_GRAD_NORM,
+    MODEL_REVISIONS,
+    OPTIMIZER_NAME,
+    PRIMARY_SCHEDULER,
+    REPO_ROOT,
+)
+
 # Configuration
 SEED_LIST = [42, 123, 456, 789, 1011]  # 5 different seeds
-CSV_3CLS = os.getenv("OUTCOME_DATASET_CSV", "outcome_3cls.csv")
+CSV_3CLS = os.getenv(
+    "OUTCOME_DATASET_CSV",
+    str(REPO_ROOT / "restricted_data" / "outcome_3cls.csv"),
+)
 TEXT_COL = "outcome"
 LABEL3 = "outcome.class"
 NUM_LABELS = 3
 MODEL_NAME = "bioformers/bioformer-8L"
 LOCAL_FILES_ONLY = os.getenv("OUTCOME_LOCAL_FILES_ONLY", "1").strip().lower() not in {"0", "false", "no"}
-OUTPUT_DIR = os.getenv("OUTCOME_ENSEMBLE_OUTPUT_DIR", "./outputs_ensemble_aligned_primary")
-DATA_PREP_OUTPUT_DIR = "./outputs_outcome_3cls_high_acc"
-RESULTS_DIR = "./results"
-RESULTS_JSON = os.getenv("OUTCOME_ENSEMBLE_RESULTS_PATH", os.path.join(RESULTS_DIR, "ensemble_results_aligned_primary.json"))
+OUTPUT_DIR = os.getenv(
+    "OUTCOME_ENSEMBLE_OUTPUT_DIR",
+    str(REPO_ROOT / "private_outputs" / "ensemble" / "training"),
+)
+DATA_PREP_OUTPUT_DIR = str(REPO_ROOT / "private_outputs" / "data_preparation")
+RESULTS_DIR = str(REPO_ROOT / "private_outputs" / "ensemble")
+RESULTS_JSON = os.getenv(
+    "OUTCOME_ENSEMBLE_RESULTS_PATH",
+    os.path.join(RESULTS_DIR, "ensemble_results_aligned_primary.json"),
+)
 ID2LABEL = {0: "Objective", 1: "Semi-objective", 2: "Subjective"}
 
 # Hyperparameters matched to the validation-selected primary Bioformer checkpoint
@@ -343,19 +363,33 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
     print(f"Training Model {seed} (Seed: {seed})")
     print(f"{'='*60}")
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_NAME,
+        use_fast=True,
+        revision=MODEL_REVISIONS[MODEL_NAME],
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    config = AutoConfig.from_pretrained(MODEL_NAME, num_labels=NUM_LABELS, 
-                                       id2label=ID2LABEL, label2id={v:k for k,v in ID2LABEL.items()}, local_files_only=LOCAL_FILES_ONLY)
+    config = AutoConfig.from_pretrained(
+        MODEL_NAME,
+        num_labels=NUM_LABELS,
+        id2label=ID2LABEL,
+        label2id={v:k for k,v in ID2LABEL.items()},
+        revision=MODEL_REVISIONS[MODEL_NAME],
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME, config=config, local_files_only=LOCAL_FILES_ONLY
+        MODEL_NAME,
+        config=config,
+        revision=MODEL_REVISIONS[MODEL_NAME],
+        local_files_only=LOCAL_FILES_ONLY,
     )
     model = model.to(device)
     unlock_last_blocks_and_layernorms(model, n_last_blocks=UNFREEZE_BLOCKS)
     
     import torch
-    use_fp16 = False if device_type == "mps" else True
+    use_fp16 = device_type == "cuda"
     
     y_train = np.array(train_tok["labels"])
     class_weights = torch.tensor(compute_class_weights(y_train, NUM_LABELS), dtype=torch.float32)
@@ -370,15 +404,20 @@ def train_single_model(seed: int, train_tok, val_tok, test_tok, device, device_t
         load_best_model_at_end=True,
         metric_for_best_model="macro_f1", greater_is_better=True,
         learning_rate=LR,
+        lr_scheduler_type=PRIMARY_SCHEDULER,
+        optim=OPTIMIZER_NAME,
+        adam_beta1=ADAM_BETA1,
+        adam_beta2=ADAM_BETA2,
+        adam_epsilon=ADAM_EPSILON,
         per_device_train_batch_size=BATCH_SIZE, per_device_eval_batch_size=BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACCUM, num_train_epochs=EPOCHS,
         weight_decay=WEIGHT_DECAY, warmup_ratio=WARMUP_R,
         logging_steps=50, seed=seed, fp16=use_fp16,
-        max_grad_norm=1.0, report_to="none", 
+        max_grad_norm=MAX_GRAD_NORM, report_to="none",
         dataloader_num_workers=0,
         group_by_length=True,
     )
-    
+
     try:
         args = TrainingArguments(evaluation_strategy="epoch", **common_kwargs)
     except TypeError:
@@ -481,7 +520,12 @@ def main():
     df = load_and_clean(CSV_3CLS, keep_duplicates=False)
     ds = stratified_split_70_10_20(df)
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True, local_files_only=LOCAL_FILES_ONLY)
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_NAME,
+        use_fast=True,
+        revision=MODEL_REVISIONS[MODEL_NAME],
+        local_files_only=LOCAL_FILES_ONLY,
+    )
     def enc(b): 
         return tokenizer(b[TEXT_COL], padding=True, truncation=True, max_length=MAX_LENGTH)
     
@@ -544,8 +588,24 @@ def main():
     with open(output_path, "w") as f:
         json.dump(ensemble_results, f, indent=2)
 
+    public_results = {
+        **ensemble_results,
+        "individual_models": [
+            {
+                key: value
+                for key, value in result.items()
+                if key not in {"predictions", "model_path"}
+            }
+            for result in results
+        ],
+        "note": (
+            "This public summary excludes row-level prediction vectors and local "
+            "checkpoint paths. The complete private run artifact remains in the "
+            "ignored training-output directory."
+        ),
+    }
     with open(RESULTS_JSON, "w") as f:
-        json.dump(ensemble_results, f, indent=2)
+        json.dump(public_results, f, indent=2)
 
     print(f"\nResults saved to: {output_path}")
     print(f"Flat results saved to: {RESULTS_JSON}")

@@ -1,0 +1,78 @@
+{
+  "cleaning": {
+    "source_rows": 43339,
+    "valid_rows_before_deduplication": 43332,
+    "rows_after_exact_text_label_deduplication": 22518,
+    "exact_text_label_duplicates_removed": 20814,
+    "unique_reviews_after_deduplication": 3617
+  },
+  "split_design": {
+    "method": "10-fold StratifiedGroupKFold; 7 train folds, 1 validation fold, 2 test folds",
+    "seed": 42,
+    "selected_test_folds": [
+      7,
+      8
+    ],
+    "selected_validation_fold": 6,
+    "selection_rule": "Minimize absolute split-size error plus absolute class-proportion error; model predictions are not used",
+    "selection_score": 0.021342425056544212,
+    "review_overlap_counts": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    }
+  },
+  "total_outcomes": 22518,
+  "total_reviews": 3617,
+  "splits": {
+    "train": {
+      "outcomes": 15795,
+      "outcome_percent": 70.14388489208633,
+      "reviews": 2534,
+      "class_counts": {
+        "Objective": 1090,
+        "Semi-objective": 6899,
+        "Subjective": 7806
+      },
+      "class_percent": {
+        "Objective": 6.900918012029123,
+        "Semi-objective": 43.67837923393479,
+        "Subjective": 49.420702754036085
+      }
+    },
+    "validation": {
+      "outcomes": 2294,
+      "outcome_percent": 10.187405631050716,
+      "reviews": 361,
+      "class_counts": {
+        "Objective": 173,
+        "Semi-objective": 990,
+        "Subjective": 1131
+      },
+      "class_percent": {
+        "Objective": 7.541412380122058,
+        "Semi-objective": 43.156059285091544,
+        "Subjective": 49.3025283347864
+      }
+    },
+    "test": {
+      "outcomes": 4429,
+      "outcome_percent": 19.668709476862954,
+      "reviews": 722,
+      "class_counts": {
+        "Objective": 304,
+        "Semi-objective": 1944,
+        "Subjective": 2181
+      },
+      "class_percent": {
+        "Objective": 6.863851885301423,
+        "Semi-objective": 43.89252652969068,
+        "Subjective": 49.2436215850079
+      }
+    }
+  },
+  "cross_split_text_audit": {
+    "test_normalized_text_seen_in_train_any_label": 199,
+    "test_normalized_text_and_label_seen_in_train": 160
+  }
+}
