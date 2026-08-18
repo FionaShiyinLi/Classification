@@ -6,10 +6,9 @@ import numpy as np
 import pandas as pd
 from datasets import Dataset, DatasetDict, Value
 from sklearn.metrics import (
-    accuracy_score, f1_score, classification_report, 
-    confusion_matrix, cohen_kappa_score, roc_auc_score
+    accuracy_score, f1_score, classification_report,
+    confusion_matrix, cohen_kappa_score
 )
-from scipy import stats
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
@@ -36,7 +35,7 @@ CANONICAL_RESULTS_PATH = os.getenv(
 # - Primary reference checkpoint: reduced-sweep winner chosen by validation
 #   accuracy, with validation macro F1 as the tie-breaker. Within each run,
 #   the trainer restored the epoch with the best validation macro F1.
-TUNED_4BLOCK_MODEL_PATH = os.getenv(
+PRIMARY_CHECKPOINT_PATH = os.getenv(
     "OUTCOME_REFERENCE_CHECKPOINT",
     "./results/outputs_hparam_search_base16/lr3e-05_wu0.04_uf8_rd1.0/best_model",
 )
@@ -70,15 +69,9 @@ MAX_LENGTH = 128  # Match finetune_high_accuracy.py
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OUTCOME_LLM_MODEL", "openai/gpt-5.2")
 
-# The manuscript's current hybrid result is produced by the validation-only
-# workflow in analyses/hybrid_threshold.  The original 0.70 heuristic remains
-# available only for historical reproducibility and is disabled by default.
-LEGACY_CONFIDENCE_THRESHOLD = 0.70
-RUN_LEGACY_HYBRID = os.getenv("OUTCOME_RUN_LEGACY_HYBRID", "0").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-}
+# Hybrid routing is intentionally not implemented in this historical evaluator.
+# The manuscript's current hybrid result is produced only by the validation-only
+# selection and locked-test workflow in analyses/hybrid_threshold.
 USE_SAVED_TEST_PREDICTIONS = False  # Force canonical split regeneration
 
 np.random.seed(SEED)
@@ -303,19 +296,6 @@ def load_test_data(csv_path: str, model_path: Optional[str] = None) -> Tuple[Lis
     labels = np.array(test_ds["labels"])
     print(f"  Generated {len(texts)} samples from canonical split")
     return texts, labels
-
-def bootstrap_ci(metric_fn, y_true, y_pred, n_bootstrap=1000, confidence=0.95):
-    """Calculate bootstrap confidence interval"""
-    n = len(y_true)
-    metrics = []
-    for _ in range(n_bootstrap):
-        indices = np.random.choice(n, n, replace=True)
-        m = metric_fn(y_true[indices], y_pred[indices])
-        metrics.append(m)
-    alpha = 1 - confidence
-    lower = np.percentile(metrics, 100 * alpha / 2)
-    upper = np.percentile(metrics, 100 * (1 - alpha / 2))
-    return lower, upper, np.mean(metrics)
 
 # ========== Method 1: Fine-Tuned Model ==========
 
@@ -576,47 +556,14 @@ class LLMAPIEvaluator:
         
         return np.array(all_predictions)
 
-# ========== Method 3: Hybrid Approach ==========
-
-class HybridEvaluator:
-    def __init__(self, fine_tuned_model: FineTunedModelEvaluator, llm_evaluator: LLMAPIEvaluator, 
-                 confidence_threshold: float = 0.7):
-        self.fine_tuned = fine_tuned_model
-        self.llm = llm_evaluator
-        self.threshold = confidence_threshold
-        self.stats = {"fine_tuned_only": 0, "llm_fallback": 0}
-    
-    def predict(self, texts: List[str]) -> Tuple[np.ndarray, Dict]:
-        """Hybrid prediction: use LLM for low-confidence cases"""
-        # Get fine-tuned predictions with probabilities
-        preds_ft, probs_ft = self.fine_tuned.predict_batch(texts, return_probs=True)
-        
-        # Calculate confidence (max probability)
-        confidences = np.max(probs_ft, axis=1)
-        low_confidence_mask = confidences < self.threshold
-        
-        # Use LLM for low-confidence cases
-        final_preds = preds_ft.copy()
-        if low_confidence_mask.sum() > 0:
-            low_conf_texts = [texts[i] for i in range(len(texts)) if low_confidence_mask[i]]
-            llm_preds = self.llm.predict(low_conf_texts)
-            
-            llm_idx = 0
-            for i in range(len(texts)):
-                if low_confidence_mask[i]:
-                    final_preds[i] = llm_preds[llm_idx]
-                    llm_idx += 1
-            
-            self.stats["llm_fallback"] = low_confidence_mask.sum()
-        
-        self.stats["fine_tuned_only"] = len(texts) - self.stats["llm_fallback"]
-        
-        return final_preds, self.stats
-
 # ========== Evaluation Function ==========
 
 def evaluate_method(y_true: np.ndarray, y_pred: np.ndarray, method_name: str) -> Dict:
-    """Comprehensive evaluation"""
+    """Calculate point metrics for a private core-evaluation run.
+
+    Manuscript confidence intervals are produced by the dedicated cluster-
+    bootstrap workflows that resample complete Cochrane reviews.
+    """
     accuracy = accuracy_score(y_true, y_pred)
     macro_f1 = f1_score(y_true, y_pred, average="macro")
     weighted_f1 = f1_score(y_true, y_pred, average="weighted")
@@ -625,18 +572,10 @@ def evaluate_method(y_true: np.ndarray, y_pred: np.ndarray, method_name: str) ->
     # Per-class metrics
     per_class_f1 = f1_score(y_true, y_pred, average=None, labels=[0, 1, 2])
     
-    # Bootstrap CIs
-    acc_ci_lower, acc_ci_upper, _ = bootstrap_ci(accuracy_score, y_true, y_pred)
-    f1_ci_lower, f1_ci_upper, _ = bootstrap_ci(
-        lambda yt, yp: f1_score(yt, yp, average="macro"), y_true, y_pred
-    )
-    
     results = {
         "method": method_name,
         "accuracy": accuracy,
-        "accuracy_ci": (acc_ci_lower, acc_ci_upper),
         "macro_f1": macro_f1,
-        "macro_f1_ci": (f1_ci_lower, f1_ci_upper),
         "weighted_f1": weighted_f1,
         "kappa": kappa,
         "per_class_f1": {
@@ -657,21 +596,21 @@ def main():
     print("Comprehensive Evaluation: All Methods")
     print("=" * 60)
     print(f"Dataset CSV: {CSV_3CLS}")
-    print(f"Reference checkpoint: {TUNED_4BLOCK_MODEL_PATH}")
+    print(f"Reference checkpoint: {PRIMARY_CHECKPOINT_PATH}")
     print(f"Local-files-only model loading: {LOCAL_FILES_ONLY}")
     
     # Load test data
-    print("\n[1/5] Loading test data...")
-    texts, labels = load_test_data(CSV_3CLS, TUNED_4BLOCK_MODEL_PATH)
+    print("\n[1/4] Loading test data...")
+    texts, labels = load_test_data(CSV_3CLS, PRIMARY_CHECKPOINT_PATH)
     print(f"Test samples: {len(texts)}")
     print(f"Class distribution: {np.bincount(labels)}")
     
     all_results = []
     
     # Method 1: Fine-tuned model
-    print("\n[2/5] Evaluating fine-tuned model...")
-    if os.path.exists(TUNED_4BLOCK_MODEL_PATH):
-        ft_evaluator = FineTunedModelEvaluator(TUNED_4BLOCK_MODEL_PATH)
+    print("\n[2/4] Evaluating fine-tuned model...")
+    if os.path.exists(PRIMARY_CHECKPOINT_PATH):
+        ft_evaluator = FineTunedModelEvaluator(PRIMARY_CHECKPOINT_PATH)
         start_time = time.time()
         preds_ft, _ = ft_evaluator.predict_batch(texts, batch_size=32)
         ft_time = time.time() - start_time
@@ -681,7 +620,7 @@ def main():
         )
         results_ft["inference_time"] = ft_time
         results_ft["time_per_sample"] = ft_time / len(texts)
-        results_ft["checkpoint_directory_name"] = Path(TUNED_4BLOCK_MODEL_PATH).name
+        results_ft["checkpoint_directory_name"] = Path(PRIMARY_CHECKPOINT_PATH).name
         results_ft["artifact_id"] = PRIMARY_REFERENCE_RUN["artifact_id"]
         results_ft["run_family"] = PRIMARY_REFERENCE_RUN["run_family"]
         results_ft["paper_role"] = PRIMARY_REFERENCE_RUN["paper_role"]
@@ -700,20 +639,24 @@ def main():
             print(f"      - A mismatch in test data (wrong split or preprocessing).")
             print(f"      - The wrong model checkpoint is being loaded.")
             print(f"      - A bug in the model loading or evaluation logic.")
-            print(f"  ⚠️  Model path being evaluated: {TUNED_4BLOCK_MODEL_PATH}")
+            print(f"  ⚠️  Model path being evaluated: {PRIMARY_CHECKPOINT_PATH}")
     else:
-        print(f"  Warning: Fine-tuned model not found at {TUNED_4BLOCK_MODEL_PATH}")
+        print(f"  Warning: Fine-tuned model not found at {PRIMARY_CHECKPOINT_PATH}")
         ft_evaluator = None
     
     # Method 2: LLM API
     if OPENROUTER_API_KEY:
-        print("\n[3/5] Evaluating LLM API...")
+        print("\n[3/4] Evaluating original few-shot LLM implementation...")
         llm_evaluator = LLMAPIEvaluator(OPENROUTER_API_KEY, OPENROUTER_MODEL)
         start_time = time.time()
         preds_llm = llm_evaluator.predict(texts, batch_size=50)  # Reduced to avoid token limits
         llm_time = time.time() - start_time
         
-        results_llm = evaluate_method(labels, preds_llm, f"LLM API ({OPENROUTER_MODEL})")
+        results_llm = evaluate_method(
+            labels,
+            preds_llm,
+            f"Original few-shot LLM implementation ({OPENROUTER_MODEL})",
+        )
         results_llm["inference_time"] = llm_time
         results_llm["time_per_sample"] = llm_time / len(texts)
         all_results.append(results_llm)
@@ -721,42 +664,10 @@ def main():
         print(f"  Macro F1: {results_llm['macro_f1']:.4f}")
         print(f"  Time: {llm_time:.2f}s ({llm_time/len(texts)*1000:.2f}ms per sample)")
     else:
-        print("\n[3/5] Skipping LLM API (no API key)")
-        llm_evaluator = None
-    
-    # Method 3: Hybrid approach
-    if ft_evaluator and llm_evaluator and RUN_LEGACY_HYBRID:
-        print("\n[4/5] Evaluating legacy 0.70 heuristic hybrid...")
-        hybrid_evaluator = HybridEvaluator(
-            ft_evaluator, llm_evaluator, LEGACY_CONFIDENCE_THRESHOLD
-        )
-        start_time = time.time()
-        preds_hybrid, hybrid_stats = hybrid_evaluator.predict(texts)
-        hybrid_time = time.time() - start_time
-        
-        results_hybrid = evaluate_method(
-            labels,
-            preds_hybrid,
-            "Legacy exploratory hybrid (0.70 heuristic)",
-        )
-        results_hybrid["inference_time"] = hybrid_time
-        results_hybrid["time_per_sample"] = hybrid_time / len(texts)
-        results_hybrid["hybrid_stats"] = hybrid_stats
-        all_results.append(results_hybrid)
-        print(f"  Accuracy: {results_hybrid['accuracy']:.4f}")
-        print(f"  Macro F1: {results_hybrid['macro_f1']:.4f}")
-        print(f"  Fine-tuned only: {hybrid_stats['fine_tuned_only']}")
-        print(f"  LLM fallback: {hybrid_stats['llm_fallback']}")
-        print(f"  Time: {hybrid_time:.2f}s")
-    elif ft_evaluator and llm_evaluator:
-        print(
-            "\n[4/5] Skipping the obsolete 0.70 hybrid. Run "
-            "analyses/hybrid_threshold/run_threshold_experiment.py for the "
-            "current validation-selected 0.55 analysis."
-        )
+        print("\n[3/4] Skipping LLM API (no API key)")
     
     # Save results
-    print("\n[5/5] Saving results...")
+    print("\n[4/4] Saving results...")
     output_file = CANONICAL_RESULTS_PATH
     
     # Convert numpy types to native Python types for JSON serialization
@@ -791,8 +702,8 @@ def main():
     print("=" * 60)
     for result in all_results:
         print(f"\n{result['method']}:")
-        print(f"  Accuracy: {result['accuracy']:.4f} (95% CI: {result['accuracy_ci'][0]:.4f}-{result['accuracy_ci'][1]:.4f})")
-        print(f"  Macro F1: {result['macro_f1']:.4f} (95% CI: {result['macro_f1_ci'][0]:.4f}-{result['macro_f1_ci'][1]:.4f})")
+        print(f"  Accuracy: {result['accuracy']:.4f}")
+        print(f"  Macro F1: {result['macro_f1']:.4f}")
         print(f"  Kappa: {result['kappa']:.4f}")
         if 'time_per_sample' in result:
             print(f"  Time: {result['time_per_sample']*1000:.2f}ms per sample")
@@ -808,15 +719,16 @@ def main():
     print("Expected results (current local artifacts):")
     print("  - Primary evaluation reference checkpoint (Bioformer-8L, 8 blocks, lr=3e-5, warmup=0.04, R-Drop=1.0): ~91.54% accuracy")
     print("    Note: this is the validation-selected checkpoint for the main paper.")
-    print("  - LLM API (GPT-5.2, improved prompt): ~59.29% accuracy")
+    print("  - Original few-shot GPT-5.2 implementation: ~59.29% accuracy")
     print("  - Validation-selected hybrid (threshold 0.55): ~91.52% accuracy; no improvement over Bioformer")
     print("\nIf fine-tuned model accuracy is significantly different:")
-    print("  1. Check that the correct model checkpoint is loaded (see TUNED_4BLOCK_MODEL_PATH).")
+    print("  1. Check that the correct model checkpoint is loaded (see PRIMARY_CHECKPOINT_PATH).")
     print("  2. Verify test data preprocessing matches the canonical training split (seed=42).")
     print("  3. Ensure predictions are being read from the intended checkpoint directory.")
     print("\nAuthoritative result files for verification:")
     print(f"  - {CANONICAL_RESULTS_PATH} (new private run output)")
     print("  - results/ (reviewed manuscript artifacts; never overwritten automatically)")
+    print("  - analyses/hybrid_threshold/ (the only current hybrid workflow)")
 
 if __name__ == "__main__":
     main()

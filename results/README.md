@@ -12,7 +12,7 @@ split assignments, nearest-training text, GPT raw requests/responses, request
 logs, model checkpoints, optimizer state, and absolute machine-local paths.
 
 The obsolete heuristic 0.70 hybrid and the older non-aligned ensemble artifact
-are not part of the curated results. The current hybrid files under
-`analyses/hybrid_threshold/` record validation selection of 0.55 and the single
-locked test evaluation.
-
+are not part of the core evaluator or curated results. The current hybrid files
+under `analyses/hybrid_threshold/` record validation selection of 0.55 and the
+single locked test evaluation; the validation table retains 0.70 only as an
+inferior candidate.

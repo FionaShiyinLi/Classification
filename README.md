@@ -104,10 +104,11 @@ manuscript.
 | Reviewer agreement | `python analyses/reviewer_agreement/analyze_reviewer_agreement.py` |
 | Sixteen-subgroup performance | `python analyses/subgroup_performance/analyze_subgroup_performance.py` |
 
-The original 0.70 hybrid remains available only behind
-`OUTCOME_RUN_LEGACY_HYBRID=1`. The current manuscript result is produced by the
+The historical heuristic 0.70 hybrid is not part of the core evaluator or the
+curated results. The current manuscript result is produced only by the
 validation-only threshold workflow, which selected 0.55 before its one locked
-test evaluation.
+test evaluation. The complete validation threshold table retains 0.70 as an
+inferior candidate for transparency.
 
 ## Training schedules
 

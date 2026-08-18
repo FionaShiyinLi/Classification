@@ -83,6 +83,70 @@ class PublicArtifactTests(unittest.TestCase):
         self.assertEqual(result["n_test_samples"], 4503)
         self.assertAlmostEqual(result["accuracy"], 4122 / 4503)
         self.assertAlmostEqual(result["macro_f1"], 0.9151846159003062)
+        self.assertAlmostEqual(result["time_per_sample"], 0.0019931660846368806)
+        self.assertIn("validation accuracy", result["paper_role"])
+        self.assertIn("tie-breaker", result["provenance_note"])
+
+    def test_core_evaluation_excludes_obsolete_hybrid_and_item_bootstrap(self):
+        results = json.loads(
+            (REPO_ROOT / "results/evaluation_results.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(len(results), 2)
+        self.assertFalse(
+            any("hybrid" in row["method"].lower() for row in results)
+        )
+        for row in results:
+            self.assertNotIn("accuracy_ci", row)
+            self.assertNotIn("accuracy_ci_95", row)
+            self.assertNotIn("macro_f1_ci", row)
+            self.assertNotIn("macro_f1_ci_95", row)
+
+        source = (REPO_ROOT / "evaluate_all_methods.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("OUTCOME_RUN_LEGACY_HYBRID", source)
+        self.assertNotIn("LEGACY_CONFIDENCE_THRESHOLD", source)
+        self.assertNotIn("def bootstrap_ci", source)
+
+    def test_search_selection_provenance_matches_manuscript(self):
+        rows = json.loads(
+            (REPO_ROOT / "results/search_results.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        primary = [row for row in rows if row.get("is_primary_reference")]
+        self.assertEqual(len(primary), 1)
+        self.assertIn("validation accuracy", primary[0]["provenance_note"])
+        self.assertIn("tie-breaker", primary[0]["provenance_note"])
+
+    def test_current_uncertainty_and_ensemble_artifacts_are_unambiguous(self):
+        uncertainty_path = (
+            REPO_ROOT / "results/analyses/uncertainty/table2_uncertainty.csv"
+        )
+        with uncertainty_path.open(newline="", encoding="utf-8") as handle:
+            rows = {row["model"]: row for row in csv.DictReader(handle)}
+        bioformer = rows["Bioformer-8L"]
+        self.assertAlmostEqual(
+            float(bioformer["accuracy_ci_lower"]), 0.9058345720444235
+        )
+        self.assertAlmostEqual(
+            float(bioformer["accuracy_ci_upper"]), 0.924868335725735
+        )
+
+        self.assertFalse((REPO_ROOT / "results/ensemble_results.json").exists())
+        ensemble = json.loads(
+            (
+                REPO_ROOT / "results/ensemble_results_aligned_primary.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertAlmostEqual(
+            ensemble["ensemble"]["accuracy"], 0.9111703308905175
+        )
+        self.assertAlmostEqual(
+            ensemble["ensemble"]["macro_f1"], 0.9176184142719231
+        )
 
     def test_subgroup_totals_match_primary_checkpoint(self):
         result = json.loads(

@@ -11,15 +11,14 @@
       "Subjective": 0.9231815091774304
     },
     "time_per_sample_seconds": 0.0019931660846368806,
+    "timing_note": "Retained single complete test-set pass used in the manuscript; private reruns may differ and must not overwrite this curated timing result.",
     "artifact_id": "table1_primary_reference_bioformer8l",
     "note": "Cluster-bootstrap confidence intervals are reported in results/analyses/uncertainty/table1_uncertainty.csv."
   },
   {
     "method": "Original few-shot GPT-5.2 implementation",
     "accuracy": 0.5929380413057961,
-    "accuracy_ci_95": [0.5782811459027315, 0.607372862536087],
     "macro_f1": 0.6285279682142603,
-    "macro_f1_ci_95": [0.6131151194412042, 0.6442159610435015],
     "weighted_f1": 0.5480901081584166,
     "kappa": 0.3101489356367375,
     "per_class_f1": {
@@ -28,6 +27,6 @@
       "Subjective": 0.41146013117017605
     },
     "time_per_sample_seconds": 0.6867398549629904,
-    "note": "Historical original implementation; post hoc prompt sensitivities are reported separately under results/analyses/gpt_prompt_sensitivity."
+    "note": "Historical original implementation. No confidence interval from the obsolete item-level bootstrap is retained; post hoc prompt sensitivities and their review-cluster intervals are reported separately under results/analyses/gpt_prompt_sensitivity."
   }
 ]

@@ -7,8 +7,8 @@ from pathlib import Path
 
 from evaluate_all_methods import (
     CSV_3CLS,
+    PRIMARY_CHECKPOINT_PATH,
     PRIMARY_REFERENCE_RUN,
-    TUNED_4BLOCK_MODEL_PATH,
     FineTunedModelEvaluator,
     evaluate_method,
     load_test_data,
@@ -49,16 +49,16 @@ def parse_args():
 def main():
     args = parse_args()
     print(f"Dataset CSV: {CSV_3CLS}")
-    print(f"Reference checkpoint: {TUNED_4BLOCK_MODEL_PATH}")
+    print(f"Reference checkpoint: {PRIMARY_CHECKPOINT_PATH}")
 
-    texts, labels = load_test_data(CSV_3CLS, model_path=TUNED_4BLOCK_MODEL_PATH)
+    texts, labels = load_test_data(CSV_3CLS, model_path=PRIMARY_CHECKPOINT_PATH)
     if len(labels) != EXPECTED_MANUSCRIPT_TEST_N and not args.allow_non_manuscript_test_size:
         raise RuntimeError(
             f"Refusing to label a {len(labels)}-item test split as the manuscript "
             f"result; expected {EXPECTED_MANUSCRIPT_TEST_N}. Supply the restricted "
             "full dataset, or pass --allow-non-manuscript-test-size for a smoke run."
         )
-    evaluator = FineTunedModelEvaluator(TUNED_4BLOCK_MODEL_PATH)
+    evaluator = FineTunedModelEvaluator(PRIMARY_CHECKPOINT_PATH)
     start = time.time()
     preds, _ = evaluator.predict_batch(texts, batch_size=32, return_probs=True)
     inference_time = time.time() - start
@@ -66,7 +66,7 @@ def main():
 
     payload = {
         "method": "Fine-Tuned Bioformer-8L (exact primary checkpoint inference)",
-        "checkpoint_directory_name": Path(TUNED_4BLOCK_MODEL_PATH).name,
+        "checkpoint_directory_name": Path(PRIMARY_CHECKPOINT_PATH).name,
         "dataset_csv": Path(CSV_3CLS).name,
         "dataset_note": (
             "Restricted full dataset used for the manuscript."
